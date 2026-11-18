@@ -13,7 +13,7 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
-import { DEFAULT_TEAM_NAMES } from '../config/brand';
+import { teamNamesFromRounds } from '../config/brand';
 import { offsetFrom, serverNow, setServerOffset } from './clock';
 import { fb } from './firebase';
 import { randomPin, randomRoomCode, randomToken, sentenceId as makeSentenceId, voteId as makeVoteId } from './ids';
@@ -57,7 +57,7 @@ export async function createRoom(uid: string, rounds: RoundConfig[]): Promise<{ 
       rejoinExpiresAt: null,
       showWallLive: false,
       showDeletions: true,
-      teamNames: { ...DEFAULT_TEAM_NAMES },
+      teamNames: teamNamesFromRounds(rounds),
       createdAt: serverTimestamp(),
     };
     const b = writeBatch(db);

@@ -210,7 +210,7 @@ export function BigWriting({
           >
             <div className="rotate-[-4deg] rounded-xl bg-paper px-[1.2em] py-[0.6em] text-center shadow-2xl">
               <p className="font-serif text-[2.4em] font-black text-rejected">Time's up!</p>
-              <p className="font-hand text-[1.4em]">Pencils down, interns.</p>
+              <p className="font-hand text-[1.4em]">Pencils down!</p>
             </div>
           </motion.div>
         )}

@@ -126,8 +126,7 @@ export function PhoneJoinForm({
                     : 'border-ink/15 bg-white text-ink',
                 )}
               >
-                <span className="text-lg leading-tight">{teamNames[t].split(' - ')[0]}</span>
-                <span className="text-xs opacity-90">{teamNames[t].split(' - ')[1] ?? ''}</span>
+                <span className="text-lg leading-tight">{teamNames[t]}</span>
                 {counts && <span className="text-xs opacity-90">{counts[t]} joined</span>}
               </button>
             ))}
@@ -262,7 +261,7 @@ export function PhoneWriting({
       </div>
 
       {timeUp ? (
-        <Note className="text-rejected">Time's up! Pencils down, interns.</Note>
+        <Note className="text-rejected">Time's up! Pencils down.</Note>
       ) : (
         visible.map((s) => {
           const v = value(s);

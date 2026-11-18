@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { teamNamesFromRounds } from '../config/brand';
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cx } from '../components/ui';
 import * as api from '../lib/api';
@@ -178,7 +179,9 @@ export function Dock({
             if (room.currentRoundId && !map[room.currentRoundId] && room.rounds[room.currentRoundId]) {
               map[room.currentRoundId] = room.rounds[room.currentRoundId];
             }
-            await api.updateRoom(room.code, { rounds: map, roundOrder: rs.map((r) => r.id) });
+            // Before the game starts, the team names follow the first round's options.
+            const teamPatch = room.phase === 'lobby' && !room.currentRoundId ? { teamNames: teamNamesFromRounds(rs) } : {};
+            await api.updateRoom(room.code, { rounds: map, roundOrder: rs.map((r) => r.id), ...teamPatch });
           }}
         />
       )}

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_TEAM_NAMES, GAME_NAME } from '../config/brand';
+import { GAME_NAME } from '../config/brand';
 import { Btn, PaperCard, cx } from '../components/ui';
 import { employeeOfMonth, finalScore, standings, studentAverage, type ScorableSentence } from '../lib/scoring';
 import { enableSound, setMuted, useSoundState } from '../lib/sound';
@@ -12,7 +12,7 @@ import { Note, PhoneJoinForm, PhoneLeaderboard, PhoneLobby, PhoneReview, PhoneSh
 /* Fully client-side: no Firebase, no room. Uses the real components with scripted data,
    and computes everything through scoring.ts and diff.ts (via DiffText). */
 
-const TEAM_NAMES = DEFAULT_TEAM_NAMES;
+const TEAM_NAMES = { A: 'Pilot', B: 'Nurse' };
 const STEPS = ['Welcome', 'Join', 'Write', 'Review', 'Correct', 'Vote', 'Score & reveal', 'Team score'] as const;
 const AUTO_MS = [6000, 7000, 9000, 6000, 7000, 7000, 13000, 9000];
 
