@@ -280,6 +280,7 @@ function HostRoom({ room }: { room: Room }) {
         reviewedCount={locked}
         totalCount={queue.length}
         teamNames={teamNames}
+        author={room.hideAuthor === false && current ? { nickname: current.authorNickname, team: current.team } : null}
         emptyMessage={queue.length === 0 ? 'No applications this round. HR is suspicious.' : undefined}
         editor={
           current && !current.locked ? (

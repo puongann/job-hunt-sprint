@@ -144,8 +144,8 @@ function Review({ room, player }: { room: Room; player: Player }) {
       }}
       finalScore={step === 'revealed' && sentence?.locked ? sentence.finalScore : null}
       challenge={sentence?.challenge}
-      authorNickname={step === 'revealed' ? sentence?.authorNickname : undefined}
-      authorTeam={step === 'revealed' ? sentence?.team : undefined}
+      authorNickname={step === 'revealed' || room.hideAuthor === false ? sentence?.authorNickname : undefined}
+      authorTeam={step === 'revealed' || room.hideAuthor === false ? sentence?.team : undefined}
       teamNames={room.teamNames ?? DEFAULT_TEAM_NAMES}
     />
   );

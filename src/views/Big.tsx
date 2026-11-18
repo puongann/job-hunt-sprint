@@ -272,6 +272,7 @@ export function BigReview({
   editor,
   code,
   emptyMessage,
+  author,
 }: {
   round: RoundConfig | null;
   sentenceId: string | null;
@@ -288,6 +289,8 @@ export function BigReview({
   editor?: ReactNode; // the host's in-place editor replaces the static diff
   code?: string;
   emptyMessage?: string;
+  /** Set when the teacher chose to show the author before the reveal. */
+  author?: { nickname: string; team: Team } | null;
 }) {
   const controls = useAnimationControls();
   const reduce = useReducedMotion();
@@ -339,7 +342,15 @@ export function BigReview({
               <PaperCard id={sentenceId} className="w-full max-w-[48em] px-[1.2em] pb-[0.8em] pt-[1em]">
                 <div className="mb-[0.3em] flex items-center justify-between text-[0.7em] text-ink/60">
                   <span className="font-bold uppercase tracking-widest">Application · {round?.title}</span>
-                  {step !== 'revealed' && <span className="font-hand text-[1.4em] text-maroon">Author hidden until the end</span>}
+                  {step !== 'revealed' &&
+                    (author ? (
+                      <span className="flex items-center gap-[0.4em] text-[1.3em] text-ink">
+                        <span className="font-hand text-maroon">by</span> <b>{author.nickname}</b>
+                        <TeamBadge team={author.team} name={teamNames[author.team]} className="text-[0.75em]" />
+                      </span>
+                    ) : (
+                      <span className="font-hand text-[1.4em] text-maroon">Author hidden until the end</span>
+                    ))}
                 </div>
                 <div className="font-serif text-[1.75em] font-semibold leading-snug">
                   {editor ?? <DiffText original={originalText} corrected={correctedText} showDeletions={showDeletions} />}

@@ -54,6 +54,8 @@ export interface Room {
   rejoinExpiresAt: Timestamp | null;
   showWallLive: boolean;
   showDeletions: boolean;
+  /** Hide the author's name until the reveal (default true when missing). */
+  hideAuthor?: boolean;
   teamNames: { A: string; B: string };
   hostSeenAt?: Timestamp | null;
   createdAt: Timestamp | null;

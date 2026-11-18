@@ -342,7 +342,14 @@ export function PhoneReview({
           {isAuthor ? (
             <span className="rounded-full bg-maroon px-2 py-0.5 font-bold text-paper">Your sentence</span>
           ) : (
-            step !== 'revealed' && <span className="font-hand text-base">Author hidden</span>
+            step !== 'revealed' &&
+            (authorNickname ? (
+              <span className="text-sm text-ink">
+                by <b>{authorNickname}</b>
+              </span>
+            ) : (
+              <span className="font-hand text-base">Author hidden</span>
+            ))
           )}
         </div>
         <p className="font-serif text-2xl font-semibold leading-snug">

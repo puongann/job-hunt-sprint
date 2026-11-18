@@ -18,6 +18,8 @@ type Panel = 'players' | 'rejoin' | 'queue' | 'simulate' | null;
 const dockBtn =
   'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-35';
 const dark = `${dockBtn} bg-ink/[0.06] text-ink hover:bg-ink/[0.12]`;
+const small =
+  'inline-flex h-8 items-center justify-center gap-1 whitespace-nowrap rounded-md bg-ink/[0.06] px-2.5 text-[13px] font-semibold text-ink transition hover:bg-ink/[0.12]';
 const prim = `${dockBtn} bg-maroon text-paper hover:brightness-110`;
 
 export function Dock({
@@ -116,51 +118,62 @@ export function Dock({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="flex flex-wrap items-center gap-2 bg-paper/95 px-3 py-2 shadow-[0_-6px_20px_rgba(80,50,10,.18)] ring-1 ring-ink/10 backdrop-blur">
-              <span className="rounded bg-maroon px-2 py-1 font-mono text-lg font-black tracking-widest">{room.code}</span>
-              <button className={dark} onClick={() => toggle('players')} aria-pressed={panel === 'players'}>
-                👥 {players.length} <span className="text-teamA">A {counts.A}</span> /{' '}
-                <span className="text-teamB">B {counts.B}</span>
-              </button>
-              <button
-                className={cx(dark, room.joinOpen ? 'text-hired' : 'text-ink/50')}
-                onClick={() => run(() => api.updateRoom(room.code, { joinOpen: !room.joinOpen }))}
-                title="Allow brand-new players to join"
-              >
-                {room.joinOpen ? 'Join open' : 'Join closed'}
-              </button>
-              <Sep />
-              <PhaseControls ctx={ctx} rounds={rounds} now={now} openQueue={() => toggle('queue')} queueOpen={panel === 'queue'} />
-              <div className="ml-auto flex items-center gap-2">
-                <button className={cx(dark, 'relative', room.rejoinOpen && 'bg-maybe/30')} onClick={() => toggle('rejoin')}>
-                  {room.rejoinOpen ? 'Rejoin QR on' : 'Show rejoin QR'}
+            <div className="bg-paper/95 shadow-[0_-6px_20px_rgba(80,50,10,.18)] ring-1 ring-ink/10 backdrop-blur">
+              {/* Row 1: what you do now in the game */}
+              <div className="flex flex-wrap items-center gap-2 px-3 pb-1.5 pt-2">
+                <PhaseControls ctx={ctx} rounds={rounds} now={now} openQueue={() => toggle('queue')} queueOpen={panel === 'queue'} />
+              </div>
+              {/* Row 2: room and settings */}
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-ink/10 px-3 py-1.5">
+                <span className="rounded bg-maroon px-2 py-0.5 font-mono text-base font-black tracking-widest text-paper">{room.code}</span>
+                <button className={small} onClick={() => toggle('players')} aria-pressed={panel === 'players'}>
+                  👥 {players.length} <span className="text-teamA">A {counts.A}</span> / <span className="text-teamB">B {counts.B}</span>
+                </button>
+                <button
+                  className={cx(small, room.joinOpen ? 'text-hired' : 'text-ink/50')}
+                  onClick={() => run(() => api.updateRoom(room.code, { joinOpen: !room.joinOpen }))}
+                  title="Allow brand-new players to join"
+                >
+                  {room.joinOpen ? '✓ Join open' : 'Join closed'}
+                </button>
+                <button
+                  className={small}
+                  onClick={() => run(() => api.updateRoom(room.code, { hideAuthor: room.hideAuthor === false }))}
+                  title="Show or hide who wrote each sentence before the reveal"
+                  aria-pressed={room.hideAuthor !== false}
+                >
+                  {room.hideAuthor === false ? '👁 Author shown' : '🙈 Author hidden'}
+                </button>
+                <span className="flex-1" />
+                <button className={cx(small, 'relative', room.rejoinOpen && 'bg-maybe/30')} onClick={() => toggle('rejoin')}>
+                  {room.rejoinOpen ? 'Rejoin QR on' : 'Rejoin QR'}
                   {requests.length > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-rejected px-1 text-sm font-black text-white">
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rejected px-1 text-xs font-black text-white">
                       {requests.length}
                     </span>
                   )}
                 </button>
-                <button className={dark} onClick={() => setEditor(true)}>
+                <button className={small} onClick={() => setEditor(true)}>
                   ✎ Rounds
                 </button>
                 {SimulatePanel && (
-                  <button className={cx(dark, 'border border-dashed border-maybe/60 text-maybe')} onClick={() => toggle('simulate')}>
+                  <button className={cx(small, 'border border-dashed border-maybe text-[#8a6500]')} onClick={() => toggle('simulate')}>
                     Simulate class
                   </button>
                 )}
                 {sound.enabled ? (
-                  <button className={dark} onClick={() => setMuted(!sound.muted)} title="Mute / unmute">
+                  <button className={small} onClick={() => setMuted(!sound.muted)} title="Mute / unmute">
                     {sound.muted ? '🔇' : '🔊'}
                   </button>
                 ) : (
-                  <button className={`${dockBtn} bg-maroon text-paper`} onClick={enableSound}>
+                  <button className={cx(small, 'bg-maroon text-paper hover:bg-maroon')} onClick={enableSound}>
                     🔊 Enable sound
                   </button>
                 )}
-                <button className={dark} onClick={toggleFullscreen} title="Fullscreen (F)">
+                <button className={small} onClick={toggleFullscreen} title="Fullscreen (F)">
                   ⛶
                 </button>
-                <button className={dark} onClick={() => setVisible(false)} title="Hide controls (H)">
+                <button className={small} onClick={() => setVisible(false)} title="Hide controls (H)">
                   ▾
                 </button>
               </div>
@@ -216,6 +229,7 @@ function PhaseControls({
 
   const startPicker = (label: string) => (
     <>
+      <span className="flex-1" />
       <select
         className="h-10 max-w-[16rem] rounded-md bg-ink/[0.06] px-2 text-[15px] text-ink"
         value={selected}
@@ -258,6 +272,7 @@ function PhaseControls({
         >
           {room.showWallLive ? 'Text visible' : 'Text hidden'}
         </button>
+        <span className="flex-1" />
         <button className={prim} disabled={busy} onClick={() => run(() => api.startReview(room, ctx.sentences))}>
           {up ? '▶ Start review' : 'Start review now'}
         </button>
@@ -311,13 +326,41 @@ function ReviewControls({
           ? `Close voting (${ctx.liveVotes}/${room.eligibleVoters || ctx.eligible}) ▶`
           : 'Lock and reveal ▶';
 
+  const pinBtn = current && (
+    <button
+      className={cx(dark, pinned && 'bg-maybe/30')}
+      onClick={() =>
+        run(() =>
+          api.updateRoom(room.code, {
+            pinnedIds: pinned ? room.pinnedIds.filter((x) => x !== current.id) : [...(room.pinnedIds ?? []), current.id],
+          }),
+        )
+      }
+      title="Pin to come back later"
+    >
+      📌
+    </button>
+  );
+  const editing = current && !current.locked;
+  const scoring = editing && (step === 'voting' || step === 'scoring');
+
   return (
     <>
-      <button className={cx(dark, queueOpen && 'bg-ink/15')} onClick={openQueue} title="Review queue">
+      {/* 1. Navigate the sentences */}
+      <button className={cx(dark, queueOpen && 'bg-ink/15')} onClick={openQueue} title="Review queue: jump to any sentence">
         ☰ {lockedCount}/{queue.length}
       </button>
-      {current && !current.locked && (
+      {current && step !== 'revealed' && !allDone && (
+        <button className={dark} disabled={busy} onClick={ctx.goNextSentence} title="Skip to the next sentence">
+          Skip
+        </button>
+      )}
+      {pinBtn}
+
+      {/* 2. Correct the sentence */}
+      {editing && (
         <>
+          <Sep />
           <button
             className={dark}
             disabled={busy || current.correctedText === null}
@@ -333,31 +376,34 @@ function ReviewControls({
           </button>
         </>
       )}
-      {current && !current.locked && (step === 'voting' || step === 'scoring') && (
+
+      {/* 3. Teacher score, same stamps as the students' vote */}
+      {scoring && (
         <>
           <Sep />
-          <span className="text-sm text-ink/60">Score:</span>
+          <span className="text-sm text-ink/60">Your score:</span>
           {STAMPS.map((st) => {
             const on = current.teacherScore === st.value;
+            const onText = st.value === 1 ? 'text-ink' : 'text-white';
             return (
               <button
                 key={st.value}
                 className={cx(
                   dockBtn,
                   'gap-2 border-2 px-3',
-                  on ? `${st.bg} border-ink ${st.value === 1 ? 'text-ink' : 'text-white'} shadow-md` : 'border-ink/10 bg-paper hover:border-ink/30',
+                  on ? `${st.bg} border-ink ${onText} shadow-md` : 'border-ink/10 bg-paper hover:border-ink/30',
                 )}
                 onClick={() => ctx.score(st.value)}
                 title={`${st.label} = ${st.value} (key ${st.value})`}
                 aria-pressed={on}
               >
                 <span
-                  className={cx('stamp text-[13px]', on ? (st.value === 1 ? 'text-ink' : 'text-white') : st.cls)}
+                  className={cx('stamp text-[13px]', on ? onText : st.cls)}
                   style={{ transform: `rotate(${st.value === 1 ? 2 : -3}deg)`, mixBlendMode: 'normal' }}
                 >
                   {st.label}
                 </span>
-                <span className={cx('text-lg font-black', on ? (st.value === 1 ? 'text-ink' : 'text-white') : 'text-ink/40')}>{st.value}</span>
+                <span className={cx('text-lg font-black', on ? onText : 'text-ink/40')}>{st.value}</span>
               </button>
             );
           })}
@@ -370,49 +416,31 @@ function ReviewControls({
           </button>
         </>
       )}
-      <Sep />
+
+      {/* 4. Main action, always at the right */}
+      <span className="flex-1" />
       {allDone && step === 'revealed' ? (
         <>
+          <button className={prim} disabled={busy} onClick={() => run(() => api.updateRoom(room.code, { phase: 'leaderboard' }))}>
+            🏆 Leaderboard
+          </button>
           {nextRound && (
             <button className={prim} disabled={busy} onClick={() => run(() => api.startRound(room, nextRound.id))}>
               ▶ Next round: {nextRound.title}
             </button>
           )}
-          <button className={prim} disabled={busy} onClick={() => run(() => api.updateRoom(room.code, { phase: 'leaderboard' }))}>
-            🏆 Leaderboard
-          </button>
         </>
       ) : (
         <>
-          <button className={prim} disabled={busy || queue.length === 0} onClick={ctx.nextStep} title="Next step (N / Enter / →)">
-            {stepLabel}
-          </button>
-          {current && step !== 'revealed' && (
-            <button className={dark} disabled={busy} onClick={ctx.goNextSentence} title="Skip to the next sentence">
-              Skip
-            </button>
-          )}
-          {current && (
-            <button
-              className={cx(dark, pinned && 'bg-maybe/30')}
-              onClick={() =>
-                run(() =>
-                  api.updateRoom(room.code, {
-                    pinnedIds: pinned ? room.pinnedIds.filter((x) => x !== current.id) : [...(room.pinnedIds ?? []), current.id],
-                  }),
-                )
-              }
-              title="Pin to come back later"
-            >
-              📌
-            </button>
-          )}
           <button
             className={queue.length === 0 ? prim : dark}
             onClick={() => run(() => api.updateRoom(room.code, { phase: 'leaderboard' }))}
             title="Show the leaderboard now (unreviewed sentences do not count)"
           >
             🏆{queue.length === 0 ? ' Leaderboard' : ''}
+          </button>
+          <button className={cx(prim, 'min-w-[11rem]')} disabled={busy || queue.length === 0} onClick={ctx.nextStep} title="Next step (N / Enter / →)">
+            {stepLabel}
           </button>
         </>
       )}
