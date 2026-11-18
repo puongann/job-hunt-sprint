@@ -170,7 +170,7 @@ export function BigWriting({
           <div className="relative min-h-0 flex-1">
             {cards.length === 0 && (
               <p className="absolute inset-0 flex items-center justify-center text-center font-hand text-[1.4em] text-ink/80">
-                No applications yet. The coffee machine is judging you.
+                No applications yet. The HR department is watching you.
               </p>
             )}
             <div className={cx('grid content-start gap-[0.5em]', small ? 'grid-cols-4' : 'grid-cols-3')}>
