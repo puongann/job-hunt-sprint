@@ -24,7 +24,7 @@ export function Masthead({ right, code }: { right?: ReactNode; code?: string }) 
     <header className="flex items-center justify-between gap-[0.6em] px-[1em] pt-[0.6em]">
       <div className="flex items-baseline gap-[0.5em] rounded-lg bg-maroon px-[0.6em] py-[0.15em] text-paper shadow-lg">
         <span className="font-serif text-[1.1em] font-black tracking-tight">{GAME_NAME}</span>
-        {code && <span className="font-mono text-[0.8em] opacity-80">office {code}</span>}
+        {code && <span className="font-mono text-[0.8em] opacity-80">Office: {code}</span>}
       </div>
       {right}
     </header>

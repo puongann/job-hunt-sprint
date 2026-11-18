@@ -181,6 +181,7 @@ Key ideas:
 **Khi có sự cố**
 - **Học sinh bị thoát / đổi máy:** bấm **Show rejoin QR** (mở 3 phút, có +1 min và Close). Học sinh quét QR, chọn đúng tên mình. Trên thanh điều khiển hiện yêu cầu: nhìn đúng người rồi bấm **Approve**. Học sinh quay lại đúng đội, giữ nguyên câu và phiếu bầu.
 - **Trình duyệt máy chính bị mất dữ liệu:** mở `/main` trên trình duyệt khác, phần **Resume room** nhập mã phòng + PIN.
+- **Dừng chơi bất cứ lúc nào:** nút **⏹ Back to lobby** (hàng dưới thanh điều khiển). Điểm đã chấm được giữ lại.
 - **Ẩn tên tác giả:** mặc định tên người viết hiện ngay. Muốn giấu đến lúc công bố: **⚙ Settings** → tick **Hide the author**.
 - **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
 - Âm thanh: bấm **Enable sound** một lần; nút 🔊/🔇 để tắt tiếng.

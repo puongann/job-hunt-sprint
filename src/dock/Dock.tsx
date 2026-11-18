@@ -92,6 +92,26 @@ export function Dock({
                 >
                   {room.joinOpen ? '✓ Join open' : 'Join closed'}
                 </button>
+                {room.phase !== 'lobby' && (
+                  <button
+                    className={small}
+                    onClick={() => {
+                      if (!window.confirm('Stop the game and go back to the lobby? Scores so far are kept.')) return;
+                      run(() =>
+                        api.updateRoom(room.code, {
+                          phase: 'lobby',
+                          joinOpen: true,
+                          timerEndsAt: null,
+                          sentenceStep: null,
+                          currentSentenceId: null,
+                        }),
+                      );
+                    }}
+                    title="Stop playing at any time and return to the lobby"
+                  >
+                    ⏹ Back to lobby
+                  </button>
+                )}
                 <span className="flex-1" />
                 <button className={cx(small, 'relative', room.rejoinOpen && 'bg-maybe/30')} onClick={() => toggle('rejoin')}>
                   {room.rejoinOpen ? 'Rejoin QR on' : 'Rejoin QR'}
