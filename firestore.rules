@@ -1,0 +1,216 @@
+rules_version = '2';
+
+// Red Pen Rumble - Firestore security rules.
+// Identity model: a student's stable identity is a playerId. Every "who is this student"
+// check goes through rooms/{roomId}/members/{request.auth.uid}. We never compare
+// request.auth.uid with an author id directly.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function roomPath(roomId) {
+      return /databases/$(database)/documents/rooms/$(roomId);
+    }
+    function sub(roomId, coll, id) {
+      return /databases/$(database)/documents/rooms/$(roomId)/$(coll)/$(id);
+    }
+    function room(roomId) {
+      return get(roomPath(roomId)).data;
+    }
+    function isHost(roomId) {
+      return signedIn() && (
+        room(roomId).hostUid == request.auth.uid
+        || exists(sub(roomId, 'hostClaims', request.auth.uid))
+      );
+    }
+    function memberDoc(roomId) {
+      return get(sub(roomId, 'members', request.auth.uid));
+    }
+    function isActiveMember(roomId) {
+      return signedIn()
+        && exists(sub(roomId, 'members', request.auth.uid))
+        && memberDoc(roomId).data.get('revoked', false) != true;
+    }
+    function myPid(roomId) {
+      return memberDoc(roomId).data.playerId;
+    }
+    function writingOpen(r) {
+      return r.phase == 'writing' && r.timerEndsAt is timestamp && request.time < r.timerEndsAt;
+    }
+    function validText(t) {
+      return t is string && t.size() >= 1 && t.size() <= 200;
+    }
+
+    // ---------- secrets: never readable by any client ----------
+    match /roomSecrets/{roomId} {
+      allow read: if false;
+      // Only together with the room it belongs to (same batch), by the new host.
+      allow create: if signedIn()
+        && !exists(roomPath(roomId))
+        && getAfter(roomPath(roomId)).data.hostUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['pin'])
+        && request.resource.data.pin is string
+        && request.resource.data.pin.matches('^[0-9]{6}$');
+      allow update, delete: if false;
+    }
+
+    match /rooms/{roomId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.code == roomId
+        && request.resource.data.phase == 'lobby'
+        && !('pin' in request.resource.data)
+        && existsAfter(/databases/$(database)/documents/roomSecrets/$(roomId));
+      allow update: if isHost(roomId) && !('pin' in request.resource.data);
+      allow delete: if false;
+
+      // ---------- host recovery with the PIN ----------
+      match /hostClaims/{uid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['pin', 'claimedAt'])
+          && request.resource.data.pin is string
+          && request.resource.data.pin == get(/databases/$(database)/documents/roomSecrets/$(roomId)).data.pin;
+        allow delete: if false;
+      }
+
+      // ---------- auth uid -> stable playerId ----------
+      match /members/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isHost(roomId));
+        // A brand-new student (only while join is open), or the host (rejoin approval).
+        allow create: if isHost(roomId) || (
+          signedIn()
+          && request.auth.uid == uid
+          && room(roomId).joinOpen == true
+          && request.resource.data.keys().hasOnly(['playerId', 'revoked'])
+          && request.resource.data.playerId == uid
+          && request.resource.data.revoked == false
+          && !exists(sub(roomId, 'players', uid))
+          && existsAfter(sub(roomId, 'players', uid))
+        );
+        allow update: if isHost(roomId);
+        allow delete: if false;
+      }
+
+      match /players/{playerId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.auth.uid == playerId
+          && room(roomId).joinOpen == true
+          && request.resource.data.keys().hasOnly(['nickname', 'team', 'joinedAt', 'lastSeenAt', 'currentUid'])
+          && request.resource.data.nickname is string
+          && request.resource.data.nickname.matches('^[^/]{2,16}$')
+          && request.resource.data.team in ['A', 'B']
+          && request.resource.data.currentUid == playerId
+          && request.resource.data.joinedAt == request.time
+          && request.resource.data.lastSeenAt == request.time
+          && getAfter(sub(roomId, 'members', playerId)).data.playerId == playerId
+          && getAfter(sub(roomId, 'nicknames', request.resource.data.nickname.lower())).data.playerId == playerId;
+        // A student may only refresh their own heartbeat. Team / currentUid changes are host-only.
+        allow update: if isHost(roomId) || (
+          isActiveMember(roomId)
+          && myPid(roomId) == playerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeenAt'])
+          && request.resource.data.lastSeenAt == request.time
+        );
+        allow delete: if isHost(roomId);
+      }
+
+      // Nickname claim: the doc id is the lowercase nickname, so create() fails if taken.
+      match /nicknames/{nick} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && room(roomId).joinOpen == true
+          && request.resource.data.keys().hasOnly(['playerId'])
+          && request.resource.data.playerId == request.auth.uid
+          && getAfter(sub(roomId, 'players', request.auth.uid)).data.nickname.lower() == nick;
+        allow update: if false;
+        allow delete: if isHost(roomId);
+      }
+
+      // ---------- sentences ----------
+      match /sentences/{sid} {
+        allow read: if signedIn();
+        allow create: if isActiveMember(roomId) && validSentenceCreate(roomId, sid);
+        allow update: if isHost(roomId) || (isActiveMember(roomId) && validSentenceEdit(roomId));
+        allow delete: if isHost(roomId);
+      }
+
+      function validSentenceCreate(roomId, sid) {
+        let r = room(roomId);
+        let d = request.resource.data;
+        let pid = myPid(roomId);
+        let p = get(sub(roomId, 'players', pid)).data;
+        return writingOpen(r)
+          // score fields (teacherScore, finalScore, voteTally, studentAvg, locked, challenge,
+          // correctedText) can never be written by the author: they are simply not allowed keys.
+          && d.keys().hasOnly(['roundId', 'slot', 'authorPlayerId', 'authorNickname', 'team', 'originalText', 'createdAt', 'updatedAt'])
+          && d.authorPlayerId == pid
+          && d.roundId == r.currentRoundId
+          && d.slot is int
+          && d.slot >= 1
+          && d.slot <= r.rounds[d.roundId].maxPerStudent
+          && sid == d.roundId + '_' + pid + '_' + string(d.slot)
+          && d.authorNickname == p.nickname
+          && d.team == p.team
+          && validText(d.originalText);
+      }
+
+      function validSentenceEdit(roomId) {
+        let r = room(roomId);
+        let d = request.resource.data;
+        return writingOpen(r)
+          && resource.data.authorPlayerId == myPid(roomId)
+          && resource.data.roundId == r.currentRoundId
+          && d.diff(resource.data).affectedKeys().hasOnly(['originalText', 'updatedAt'])
+          && validText(d.originalText);
+      }
+
+      // ---------- votes ----------
+      match /votes/{voteId} {
+        allow read: if isHost(roomId)
+          || (isActiveMember(roomId) && voteId.matches('^.+_' + myPid(roomId) + '$'));
+        allow create, update: if isActiveMember(roomId) && validVote(roomId, voteId);
+        allow delete: if false;
+      }
+
+      function validVote(roomId, voteId) {
+        let r = room(roomId);
+        let d = request.resource.data;
+        let pid = myPid(roomId);
+        return r.phase == 'review'
+          && r.sentenceStep == 'voting'
+          && d.keys().hasOnly(['sentenceId', 'playerId', 'value', 'updatedAt'])
+          && d.sentenceId == r.currentSentenceId
+          && d.playerId == pid
+          && voteId == d.sentenceId + '_' + pid
+          && d.value in [0, 1, 2]
+          && get(sub(roomId, 'sentences', d.sentenceId)).data.authorPlayerId != pid;
+      }
+
+      // ---------- teacher-approved rejoin ----------
+      match /rejoinRequests/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isHost(roomId));
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && room(roomId).rejoinOpen == true
+          && room(roomId).rejoinExpiresAt is timestamp
+          && request.time < room(roomId).rejoinExpiresAt
+          && request.resource.data.keys().hasOnly(['playerId', 'token', 'status', 'createdAt'])
+          && request.resource.data.token == room(roomId).rejoinToken
+          && request.resource.data.status == 'pending'
+          && request.resource.data.playerId is string
+          && exists(sub(roomId, 'players', request.resource.data.playerId));
+        allow update: if isHost(roomId);
+        // The requester may withdraw a request that was not approved (e.g. picked the wrong name).
+        allow delete: if isHost(roomId)
+          || (signedIn() && request.auth.uid == uid && resource.data.status != 'approved');
+      }
+    }
+  }
+}
