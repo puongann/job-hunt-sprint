@@ -185,7 +185,7 @@ export default function SimulatePanel({ room }: { room: Room }) {
   return (
     <div>
       <h3 className="font-serif text-xl font-black">Simulate class (dev only)</h3>
-      <p className="mb-3 text-sm text-ink/60">
+      <p className="mb-3 text-sm text-paper/70">
         Bots join with their own anonymous logins, write during rounds, and vote during voting. Joining needs "Join open". The
         bots stop when you reload this page.
       </p>
@@ -196,7 +196,7 @@ export default function SimulatePanel({ room }: { room: Room }) {
           max={30}
           value={n}
           onChange={(e) => setN(Math.max(1, Math.min(30, Number(e.target.value))))}
-          className="h-10 w-20 rounded bg-ink/[0.06] px-2 text-ink"
+          className="h-10 w-20 rounded bg-white/10 px-2 text-paper"
         />
         <button
           disabled={busy || !room.joinOpen}
@@ -209,10 +209,10 @@ export default function SimulatePanel({ room }: { room: Room }) {
         >
           {busy ? 'Hiring bots...' : `Add ${n} bot students`}
         </button>
-        <button className="h-10 rounded-md bg-ink/[0.06] px-3" onClick={() => removeBots()}>
+        <button className="h-10 rounded-md bg-white/10 px-3" onClick={() => removeBots()}>
           Stop bots
         </button>
-        <span className="text-ink/70">{count} bots active</span>
+        <span className="text-paper/80">{count} bots active</span>
         {!room.joinOpen && <span className="text-maybe">Turn "Join open" on first.</span>}
       </div>
       {log.map((l, i) => (

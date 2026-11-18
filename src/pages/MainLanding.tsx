@@ -43,7 +43,7 @@ function Landing() {
               {templates.length} rounds from this browser's templates: {templates.map((t) => t.title).join(' · ')}
             </p>
             <Btn variant="paper" onClick={() => setEditing(true)}>
-              Edit rounds first
+              Settings (rounds)
             </Btn>
             <Btn
               disabled={busy}

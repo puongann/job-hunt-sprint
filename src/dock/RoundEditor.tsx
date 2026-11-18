@@ -37,7 +37,7 @@ export function RoundEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 text-[15px]" onKeyDown={(e) => e.stopPropagation()}>
       <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-paper shadow-2xl">
         <div className="flex items-center justify-between border-b border-ink/10 bg-maroon px-4 py-2 text-paper">
-          <h2 className="font-serif text-xl font-black">Round editor</h2>
+          <h2 className="font-serif text-xl font-black">Settings · Rounds</h2>
           <button onClick={onClose} className="rounded px-3 py-1 text-xl hover:bg-white/10" aria-label="Close">
             ✕
           </button>

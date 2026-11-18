@@ -164,7 +164,7 @@ Key ideas:
 4. Màn hình lớn hiện **mã phòng 4 chữ** và **mã QR**. Học sinh quét QR (hoặc vào trang web và nhập mã), đặt biệt danh, chọn Team A hoặc B.
 
 **Chơi một vòng**
-5. Thanh điều khiển nằm ở đáy màn hình (tự ẩn sau 3 giây; di chuột hoặc bấm `H` để hiện lại; `F` để toàn màn hình). Chọn vòng rồi bấm **Start round**. Lúc này học sinh mới không vào được nữa ("Join closed").
+5. Thanh điều khiển luôn nằm ở đáy màn hình (`F` để toàn màn hình). Hàng trên là thao tác chơi, nút chính luôn ở góc phải; hàng dưới là cài đặt phòng. Chọn vòng rồi bấm **Start round**. Lúc này học sinh mới không vào được nữa ("Join closed").
 6. Học sinh viết trên điện thoại. Màn hình lớn hiện số bài nộp, nội dung bị che "CONFIDENTIAL". Có thể **+30 s** hoặc **End now**.
 7. Hết giờ, bấm **Start review**.
 
@@ -181,5 +181,5 @@ Key ideas:
 **Khi có sự cố**
 - **Học sinh bị thoát / đổi máy:** bấm **Show rejoin QR** (mở 3 phút, có +1 min và Close). Học sinh quét QR, chọn đúng tên mình. Trên thanh điều khiển hiện yêu cầu: nhìn đúng người rồi bấm **Approve**. Học sinh quay lại đúng đội, giữ nguyên câu và phiếu bầu.
 - **Trình duyệt máy chính bị mất dữ liệu:** mở `/main` trên trình duyệt khác, phần **Resume room** nhập mã phòng + PIN.
-- **Sửa nội dung vòng chơi:** nút **✎ Rounds** (hoặc **Edit rounds first** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
+- **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
 - Âm thanh: bấm **Enable sound** một lần; nút 🔊/🔇 để tắt tiếng.

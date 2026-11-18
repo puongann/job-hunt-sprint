@@ -344,7 +344,8 @@ function HostRoom({ room }: { room: Room }) {
   const rejoinRemaining = (room.rejoinExpiresAt?.toMillis() ?? 0) - now;
 
   return (
-    <div className="fixed inset-0 bg-cork">
+    <div className="fixed inset-0 flex flex-col bg-ink">
+      <div className="relative min-h-0 flex-1">
       <Stage>{view}</Stage>
       <div className="stage-wrap pointer-events-none absolute inset-0">
         <div className="stage relative h-full">
@@ -356,6 +357,7 @@ function HostRoom({ room }: { room: Room }) {
             )}
           </AnimatePresence>
         </div>
+      </div>
       </div>
 
       <Dock ctx={ctx} players={players.data} requests={requests.data} now={now} rounds={rounds} />
