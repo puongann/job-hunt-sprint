@@ -16,14 +16,6 @@ jobs:
     # Secrets are not available to pull requests from forks.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    env:
-      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-      VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-      VITE_USE_EMULATOR: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,10 +31,23 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:rules
+      - name: Prepare Firebase config from the secrets
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          IN_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          IN_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          IN_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          IN_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          IN_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          IN_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+        run: bash scripts/ci-firebase-config.sh
       - run: npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          projectId: ${{ env.FIREBASE_PROJECT }}
           expires: 7d
+      - name: Remove the key file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

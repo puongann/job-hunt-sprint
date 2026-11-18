@@ -66,17 +66,15 @@ The web API key in `.env.local` is not a secret in the usual sense: every visito
 
 The code lives on GitHub. **Every push to `main` is checked and deployed automatically** by GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)): typecheck, lint, unit tests, rules tests, build, then `firebase deploy` (Hosting + Firestore rules + indexes). Pull requests get a temporary **preview link** ([.github/workflows/preview.yml](.github/workflows/preview.yml)); previews share the live database.
 
-GitHub needs 7 **secrets** (repo → *Settings → Secrets and variables → Actions → New repository secret*):
+GitHub needs 3 **secrets** (repo → *Settings → Secrets and variables → Actions → New repository secret*):
 
 | Secret name | Value |
 |---|---|
+| `FIREBASE_SERVICE_ACCOUNT` | the **whole content** of a service account key JSON file (below). The project ID is read from it. |
 | `VITE_FIREBASE_API_KEY` | `apiKey` from the web app config (Project settings → General → Your apps) |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `authDomain` |
-| `VITE_FIREBASE_PROJECT_ID` | `projectId` |
-| `VITE_FIREBASE_STORAGE_BUCKET` | `storageBucket` |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
 | `VITE_FIREBASE_APP_ID` | `appId` |
-| `FIREBASE_SERVICE_ACCOUNT` | the **whole content** of a service account key JSON file (below) |
+
+Optional: `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_STORAGE_BUCKET` and `VITE_FIREBASE_MESSAGING_SENDER_ID` (sensible defaults are derived from the project ID). Values pasted with quotes, a trailing comma or `apiKey:` in front are cleaned automatically ([scripts/ci-firebase-config.sh](scripts/ci-firebase-config.sh)).
 
 **Service account key** (lets GitHub deploy for you):
 1. Firebase console → ⚙ *Project settings → Service accounts → Generate new private key → Generate key*. A `.json` file downloads.

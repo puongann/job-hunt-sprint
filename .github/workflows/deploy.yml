@@ -35,46 +35,31 @@ jobs:
     name: Build and deploy
     needs: check
     runs-on: ubuntu-latest
-    env:
-      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-      VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-      VITE_USE_EMULATOR: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Check that the GitHub secrets are set
+      - name: Prepare Firebase config from the secrets
         env:
           SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          missing=""
-          for v in VITE_FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID VITE_FIREBASE_APP_ID; do
-            [ -z "${!v}" ] && missing="$missing $v"
-          done
-          [ -z "$SA" ] && missing="$missing FIREBASE_SERVICE_ACCOUNT"
-          if [ -n "$missing" ]; then
-            echo "::error::Missing GitHub secrets:$missing (see README, section 'GitHub + automatic deploy')"
-            exit 1
-          fi
+          IN_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          IN_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          IN_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          IN_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          IN_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          IN_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+        run: bash scripts/ci-firebase-config.sh
       - run: npm ci
       - run: npm run build
-      - name: Write the service account key
-        env:
-          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
       - name: Deploy Hosting + Firestore rules + indexes
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: >
           npx firebase deploy
           --only hosting,firestore:rules,firestore:indexes
-          --project "$VITE_FIREBASE_PROJECT_ID"
+          --project "$FIREBASE_PROJECT"
           --non-interactive
           --message "GitHub ${{ github.sha }}"
       - name: Remove the key file
