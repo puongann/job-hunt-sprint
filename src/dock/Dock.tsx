@@ -92,14 +92,6 @@ export function Dock({
                 >
                   {room.joinOpen ? '✓ Join open' : 'Join closed'}
                 </button>
-                <button
-                  className={small}
-                  onClick={() => run(() => api.updateRoom(room.code, { hideAuthor: room.hideAuthor === false }))}
-                  title="Show or hide who wrote each sentence before the reveal"
-                  aria-pressed={room.hideAuthor !== false}
-                >
-                  {room.hideAuthor === false ? '👁 Author shown' : '🙈 Author hidden'}
-                </button>
                 <span className="flex-1" />
                 <button className={cx(small, 'relative', room.rejoinOpen && 'bg-maybe/30')} onClick={() => toggle('rejoin')}>
                   {room.rejoinOpen ? 'Rejoin QR on' : 'Rejoin QR'}
@@ -135,6 +127,19 @@ export function Dock({
       {editor && (
         <RoundEditor
           initial={rounds}
+          roomOptions={
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-maroon"
+                checked={room.hideAuthor === true}
+                onChange={(e) => run(() => api.updateRoom(room.code, { hideAuthor: e.target.checked }))}
+              />
+              <span>
+                <b>Hide the author</b> until the reveal <span className="text-ink/60">(off: everyone sees who wrote each sentence)</span>
+              </span>
+            </label>
+          }
           lockedRoundId={room.phase === 'writing' || room.phase === 'review' ? room.currentRoundId : null}
           onClose={() => setEditor(false)}
           onSaveToRoom={async (rs) => {

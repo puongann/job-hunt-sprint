@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Btn, cx } from '../components/ui';
 import { newRoundId } from '../lib/ids';
 import { DEFAULT_ROUNDS, cloneRounds, exportRoundsFile, parseRounds, saveTemplates } from '../lib/rounds';
@@ -15,11 +15,14 @@ export function RoundEditor({
   onClose,
   onSaveToRoom,
   lockedRoundId,
+  roomOptions,
 }: {
   initial: RoundConfig[];
   onClose: () => void;
   onSaveToRoom?: (rounds: RoundConfig[]) => Promise<void>;
   lockedRoundId?: string | null;
+  /** Live room settings (only inside a room), applied at once. */
+  roomOptions?: ReactNode;
 }) {
   const [rounds, setRounds] = useState<RoundConfig[]>(() => cloneRounds(initial));
   const [sel, setSel] = useState(0);
@@ -42,6 +45,12 @@ export function RoundEditor({
             ✕
           </button>
         </div>
+        {roomOptions && (
+          <div className="flex flex-wrap items-center gap-4 border-b border-ink/10 bg-cork/30 px-4 py-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-ink/60">Room</span>
+            {roomOptions}
+          </div>
+        )}
         <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr]">
           <aside className="flex flex-col gap-1 overflow-y-auto border-r border-ink/10 p-2">
             {rounds.map((x, i) => (

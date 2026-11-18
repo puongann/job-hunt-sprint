@@ -168,7 +168,7 @@ Key ideas:
 6. Học sinh viết trên điện thoại. Màn hình lớn hiện số bài nộp, nội dung bị che "CONFIDENTIAL". Có thể **+30 s** hoặc **End now**.
 7. Hết giờ, bấm **Start review**.
 
-**Chấm từng câu** (tên tác giả bị ẩn đến cuối)
+**Chấm từng câu** (tên học sinh hiện dạng "Candidate Tên"; có thể ẩn trong Settings)
 8. **Sửa câu:** bấm vào câu trên màn hình lớn và gõ trực tiếp. Chữ thêm vào hiện **đỏ, đậm**; chữ bị xoá hiện gạch ngang màu xám. Điện thoại học sinh cập nhật ngay. Có nút **Reset correction** và **Hide deletions**.
 9. Bấm `N` (hoặc nút **Open voting**): học sinh bỏ phiếu REJECTED / MAYBE / HIRED. Tác giả không được tự bỏ phiếu.
 10. Bấm `0`, `1` hoặc `2` để cho điểm (tự đóng bình chọn). Bấm `S` để tặng ⭐ nếu câu dùng đúng cấu trúc "Level up!".
@@ -181,5 +181,6 @@ Key ideas:
 **Khi có sự cố**
 - **Học sinh bị thoát / đổi máy:** bấm **Show rejoin QR** (mở 3 phút, có +1 min và Close). Học sinh quét QR, chọn đúng tên mình. Trên thanh điều khiển hiện yêu cầu: nhìn đúng người rồi bấm **Approve**. Học sinh quay lại đúng đội, giữ nguyên câu và phiếu bầu.
 - **Trình duyệt máy chính bị mất dữ liệu:** mở `/main` trên trình duyệt khác, phần **Resume room** nhập mã phòng + PIN.
+- **Ẩn tên tác giả:** mặc định tên người viết hiện ngay. Muốn giấu đến lúc công bố: **⚙ Settings** → tick **Hide the author**.
 - **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
 - Âm thanh: bấm **Enable sound** một lần; nút 🔊/🔇 để tắt tiếng.

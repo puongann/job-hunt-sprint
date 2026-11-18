@@ -57,7 +57,7 @@ export async function createRoom(uid: string, rounds: RoundConfig[]): Promise<{ 
       rejoinExpiresAt: null,
       showWallLive: false,
       showDeletions: true,
-      hideAuthor: true,
+      hideAuthor: false,
       teamNames: teamNamesFromRounds(rounds),
       createdAt: serverTimestamp(),
     };

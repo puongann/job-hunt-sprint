@@ -350,7 +350,7 @@ export function BigReview({
                   {step !== 'revealed' &&
                     (author ? (
                       <span className="flex items-center gap-[0.4em] text-[1.3em] text-ink">
-                        <span className="font-hand text-maroon">by</span> <b>{author.nickname}</b>
+                        <span className="font-hand text-maroon">Candidate</span> <b>{author.nickname}</b>
                         <TeamBadge team={author.team} name={teamNames[author.team]} className="text-[0.75em]" />
                       </span>
                     ) : (
@@ -481,7 +481,7 @@ export function RevealPanel({ reveal, teamNames }: { reveal: RevealData; teamNam
           )}
           {stage >= 5 && (
             <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[1.2em]">
-              <span className="font-hand text-[1.2em]">Application submitted by </span>
+              <span className="font-hand text-[1.2em]">Application submitted by Candidate </span>
               <b className="font-serif font-black">{reveal.authorNickname}</b>{' '}
               <TeamBadge team={reveal.team} name={teamNames[reveal.team]} className="text-[0.7em]" />
             </motion.p>

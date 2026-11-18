@@ -345,7 +345,7 @@ export function PhoneReview({
             step !== 'revealed' &&
             (authorNickname ? (
               <span className="text-sm text-ink">
-                by <b>{authorNickname}</b>
+                Candidate <b>{authorNickname}</b>
               </span>
             ) : (
               <span className="font-hand text-base">Author hidden</span>
@@ -403,7 +403,7 @@ export function PhoneReview({
           {challenge && <p className="rounded-full bg-maybe px-3 py-1 font-bold">⭐ Bonus structure unlocked!</p>}
           {authorNickname && authorTeam && (
             <p>
-              <span className="font-hand text-xl">Application submitted by </span>
+              <span className="font-hand text-xl">Application submitted by Candidate </span>
               <b>{authorNickname}</b> <TeamBadge team={authorTeam} name={teamNames[authorTeam].split(' - ')[0]} className="text-xs" />
             </p>
           )}
