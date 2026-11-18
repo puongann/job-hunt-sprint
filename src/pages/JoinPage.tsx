@@ -99,6 +99,7 @@ export default function JoinPage() {
         busy={busy}
         error={error ?? (closed ? CLOSED_MSG : null)}
         roomFound={valid && !room.loading ? !!room.data : undefined}
+        pickTeamLater={room.data?.pickTeamLater === true}
       />
     </PhoneShell>
   );

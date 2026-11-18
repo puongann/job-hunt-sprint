@@ -33,6 +33,7 @@ const inMinutes = (m: number) => Timestamp.fromMillis(Date.now() + m * 60_000);
 const rounds = {
   r1: { id: 'r1', title: 'Round 1', maxPerStudent: 1 },
   r2: { id: 'r2', title: 'Round 2', maxPerStudent: 3 },
+  t1: { id: 't1', title: 'Table round', type: 'table', maxPerStudent: 3 },
 };
 
 /** Seed a room in the writing phase with three students and a host. */
@@ -271,6 +272,39 @@ describe('sentences', () => {
       setDoc(doc(asUser('p2'), `rooms/${ROOM}/sentences/r1_p2_1`), { ...sentence('p2', 'Long', 'A', 'r1', 1), challenge: true }),
     );
     await assertSucceeds(updateDoc(doc(asUser('host'), `rooms/${ROOM}/sentences/r1_p1_1`), { teacherScore: 2, challenge: true }));
+  });
+});
+
+describe('table rounds: pick a side after reading', () => {
+  const side = (team: string, round = 't1') => ({ team, sideRound: round });
+
+  it('lets a student pick their side once, in a table round, while writing is open', async () => {
+    await setRoom({ currentRoundId: 't1' });
+    const db = asUser('p2');
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
+    // only once per round
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('A')));
+  });
+
+  it('rejects side changes outside table rounds, after the timer, for someone else, or with other fields', async () => {
+    const db = asUser('p2');
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B', 'r1'))); // r1 is not a table round
+    await setRoom({ currentRoundId: 't1', timerEndsAt: Timestamp.fromMillis(Date.now() - 1000) });
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
+    await setRoom({ timerEndsAt: inMinutes(5) });
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p1`), side('A'))); // not me
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('C')));
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), { ...side('B'), nickname: 'Boss' }));
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B', 'r2'))); // wrong round
+  });
+
+  it('only accepts a table-round sentence after the side is chosen, with that team', async () => {
+    await setRoom({ currentRoundId: 't1' });
+    const db = asUser('p2');
+    await assertFails(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'A', 't1', 1)));
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
+    await assertFails(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'A', 't1', 1)));
+    await assertSucceeds(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'B', 't1', 1)));
   });
 });
 

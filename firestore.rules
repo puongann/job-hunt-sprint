@@ -111,14 +111,29 @@ service cloud.firestore {
           && request.resource.data.lastSeenAt == request.time
           && getAfter(sub(roomId, 'members', playerId)).data.playerId == playerId
           && getAfter(sub(roomId, 'nicknames', request.resource.data.nickname.lower())).data.playerId == playerId;
-        // A student may only refresh their own heartbeat. Team / currentUid changes are host-only.
+        // A student may refresh their own heartbeat, and in a table round pick their side once
+        // (after reading the table). Other team / currentUid changes are host-only.
         allow update: if isHost(roomId) || (
           isActiveMember(roomId)
           && myPid(roomId) == playerId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeenAt'])
           && request.resource.data.lastSeenAt == request.time
+        ) || (
+          isActiveMember(roomId)
+          && myPid(roomId) == playerId
+          && validSideChoice(room(roomId))
         );
         allow delete: if isHost(roomId);
+      }
+
+      function validSideChoice(r) {
+        let d = request.resource.data;
+        return writingOpen(r)
+          && r.rounds[r.currentRoundId].get('type', 'choice') == 'table'
+          && d.diff(resource.data).affectedKeys().hasOnly(['team', 'sideRound'])
+          && d.team in ['A', 'B']
+          && d.sideRound == r.currentRoundId
+          && resource.data.get('sideRound', '') != r.currentRoundId;
       }
 
       // Nickname claim: the doc id is the lowercase nickname, so create() fails if taken.
@@ -158,6 +173,8 @@ service cloud.firestore {
           && sid == d.roundId + '_' + pid + '_' + string(d.slot)
           && d.authorNickname == p.nickname
           && d.team == p.team
+          // table round: the side must have been chosen for this round first
+          && (r.rounds[d.roundId].get('type', 'choice') != 'table' || p.get('sideRound', '') == r.currentRoundId)
           && validText(d.originalText);
       }
 

@@ -56,6 +56,8 @@ export interface Room {
   showDeletions: boolean;
   /** Hide the author's name until the reveal. Default (missing / false): shown. */
   hideAuthor?: boolean;
+  /** Table rounds: students join without a team and pick a side after reading the table. */
+  pickTeamLater?: boolean;
   teamNames: { A: string; B: string };
   hostSeenAt?: Timestamp | null;
   createdAt: Timestamp | null;
@@ -68,6 +70,8 @@ export interface Player {
   joinedAt: Timestamp | null;
   lastSeenAt: Timestamp | null;
   currentUid: string;
+  /** The table round in which this player last chose their side (team). */
+  sideRound?: string;
 }
 
 export interface Sentence {

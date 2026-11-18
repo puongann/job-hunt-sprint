@@ -92,6 +92,12 @@ async function botWriteSentence(roomId: string, b: Bot, roundId: string, slot: n
   ]);
 }
 
+async function botChooseSide(roomId: string, b: Bot, team: Team, roundId: string) {
+  await restCommit(await b.token(), [
+    { path: `rooms/${roomId}/players/${b.uid}`, fields: { team, sideRound: roundId }, mask: ['team', 'sideRound'] },
+  ]);
+}
+
 async function botVote(roomId: string, b: Bot, sid: string, value: Score) {
   await restCommit(await b.token(), [
     { path: `rooms/${roomId}/votes/${voteId(sid, b.uid)}`, fields: { sentenceId: sid, playerId: b.uid, value }, serverTime: ['updatedAt'] },
@@ -130,8 +136,22 @@ function ensureDriver(roomId: string, log: (m: string) => void) {
         if (wrote.has(key)) continue;
         wrote.add(key);
         const count = Math.max(1, Math.round(rand(0.6, round.maxPerStudent)));
+        // Table rounds: read, then pick a side before writing.
+        const sideReady =
+          round.type === 'table'
+            ? new Promise<void>((resolve) =>
+                later(rand(800, 3000), () => {
+                  const team: Team = Math.random() < 0.5 ? 'A' : 'B';
+                  botChooseSide(roomId, b, team, round.id)
+                    .then(() => (b.player.team = team))
+                    .catch((e) => log(`${b.player.nickname} could not choose a side: ${(e as Error).message}`))
+                    .finally(resolve);
+                }),
+              )
+            : Promise.resolve();
         for (let slot = 1; slot <= count; slot++) {
-          later(rand(1500, Math.min(25_000, remaining * 0.6)) + slot * 800, () => {
+          later(rand(3500, Math.min(25_000, remaining * 0.6)) + slot * 800, async () => {
+            await sideReady;
             const text = BANK[Math.floor(Math.random() * BANK.length)];
             botWriteSentence(roomId, b, round.id, slot, text).catch((e) =>
               log(`${b.player.nickname} could not write: ${(e as Error).message}`),

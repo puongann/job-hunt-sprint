@@ -27,10 +27,10 @@ export function PhoneShell({
     <div className={cx('cork flex flex-col', embedded ? 'min-h-full' : 'min-h-[100dvh]')}>
       <header className="sticky top-0 z-20 flex h-[52px] items-center justify-between gap-2 bg-maroon px-4 text-paper shadow-md">
         <span className="font-serif text-lg font-black">{GAME_NAME}</span>
-        {nickname && team && (
+        {nickname && (
           <span className="flex items-center gap-2 text-sm">
             <b className="max-w-[7rem] truncate">{nickname}</b>
-            <TeamBadge team={team} name={teamName ? teamName.split(' - ')[0] : undefined} className="text-xs" />
+            {team && <TeamBadge team={team} name={teamName ? teamName.split(' - ')[0] : undefined} className="text-xs" />}
           </span>
         )}
       </header>
@@ -59,7 +59,9 @@ export function PhoneJoinForm({
   busy,
   error,
   roomFound,
+  pickTeamLater = false,
 }: {
+  pickTeamLater?: boolean;
   code: string;
   nickname: string;
   team: Team;
@@ -108,6 +110,11 @@ export function PhoneJoinForm({
             className="h-12 rounded-lg border-2 border-ink/20 bg-white px-3 text-lg outline-none focus:border-maroon"
           />
         </label>
+        {pickTeamLater ? (
+          <p className="rounded-lg bg-maybe/20 px-3 py-2 text-center text-[15px] font-semibold">
+            No team yet: you will read the task first, then choose your side.
+          </p>
+        ) : (
         <fieldset className="flex flex-col gap-1">
           <legend className="mb-1 font-semibold">Pick your team</legend>
           <div className="grid grid-cols-2 gap-2">
@@ -132,6 +139,7 @@ export function PhoneJoinForm({
             ))}
           </div>
         </fieldset>
+        )}
         {error && <p className="rounded-md bg-rejected/10 p-2 text-center font-semibold text-rejected">{error}</p>}
         <Btn type="submit" disabled={busy} className="h-14 text-lg">
           {busy ? 'Updating your CV...' : 'Apply for the job'}
@@ -166,6 +174,62 @@ export function PhoneLobby({ welcomeBack }: { welcomeBack?: boolean }) {
 export interface SlotState {
   slot: number;
   saved: string | null;
+}
+
+/** Table rounds: read the task and the numbers first, then pick a side (this becomes the team). */
+export function PhoneChooseSide({
+  round,
+  remainingMs,
+  totalMs,
+  teamNames,
+  onChoose,
+  busy,
+  error,
+}: {
+  round: RoundConfig;
+  remainingMs: number;
+  totalMs: number;
+  teamNames: { A: string; B: string };
+  onChoose?: (team: Team) => void;
+  busy?: boolean;
+  error?: string | null;
+}) {
+  return (
+    <>
+      <div className="sticky top-[52px] z-10 -mx-4 -mt-4 bg-paper/95 px-4 py-2 shadow">
+        <TimerBar remainingMs={remainingMs} totalMs={totalMs} className="text-lg" />
+      </div>
+      <PaperCard id={`side-${round.id}`} tilt={false} className="p-4 pt-5" ring={false}>
+        <h2 className="font-serif text-xl font-black leading-tight">{round.title}</h2>
+        <p className="mt-1 text-[15px] leading-snug">{round.brief}</p>
+        <div className="mt-3">
+          <RoundData round={round} compact />
+        </div>
+        {round.closingLine && <p className="mt-2 font-hand text-xl text-maroon">{round.closingLine}</p>}
+      </PaperCard>
+      <div className="paper plain flex flex-col gap-2 p-4">
+        <p className="text-center font-serif text-lg font-black">Read it all? Now choose your side:</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(['A', 'B'] as Team[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              disabled={busy || remainingMs <= 0}
+              onClick={() => onChoose?.(t)}
+              className={cx(
+                'flex min-h-[72px] items-center justify-center rounded-xl px-2 text-center text-lg font-bold leading-tight text-white shadow transition active:scale-[0.98] disabled:opacity-50',
+                t === 'A' ? 'bg-teamA' : 'bg-teamB',
+              )}
+            >
+              {teamNames[t]}
+            </button>
+          ))}
+        </div>
+        <p className="text-center text-sm text-ink/60">You cannot change it later in this round.</p>
+        {error && <p className="text-center font-semibold text-rejected">{error}</p>}
+      </div>
+    </>
+  );
 }
 
 export function PhoneWriting({

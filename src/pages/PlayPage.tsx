@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { DEFAULT_TEAM_NAMES } from '../config/brand';
 import { Loading } from '../components/ui';
-import { castVote, heartbeat, heartbeatAndSync, saveSentence } from '../lib/api';
+import { castVote, chooseSide, heartbeat, heartbeatAndSync, saveSentence } from '../lib/api';
 import {
   useAllSentences,
   useAuthUid,
@@ -16,7 +16,7 @@ import {
 } from '../lib/hooks';
 import { standings } from '../lib/scoring';
 import type { Player, Room, Score } from '../lib/types';
-import { Note, PhoneLeaderboard, PhoneLobby, PhoneReview, PhoneShell, PhoneWriting } from '../views/Phone';
+import { Note, PhoneChooseSide, PhoneLeaderboard, PhoneLobby, PhoneReview, PhoneShell, PhoneWriting } from '../views/Phone';
 import { Fatal } from './JoinPage';
 
 export default function PlayPage() {
@@ -62,10 +62,12 @@ export default function PlayPage() {
   const r = room.data;
   const p = player.data;
   const teamNames = r.teamNames ?? DEFAULT_TEAM_NAMES;
+  // Table rounds: no team until the student has read the table and chosen a side.
+  const teamPending = r.pickTeamLater === true && (r.phase === 'lobby' || p.sideRound !== r.currentRoundId);
   return (
     <PhoneShell
       nickname={p.nickname}
-      team={p.team}
+      team={teamPending ? undefined : p.team}
       teamName={teamNames[p.team]}
       banner={
         welcome && r.phase !== 'lobby' ? (
@@ -87,8 +89,32 @@ function Writing({ room, player }: { room: Room; player: Player }) {
   const now = useServerNow(250);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [choosing, setChoosing] = useState(false);
   if (!round) return <Loading />;
   const end = room.timerEndsAt?.toMillis() ?? 0;
+  if (round.type === 'table' && player.sideRound !== round.id) {
+    return (
+      <PhoneChooseSide
+        round={round}
+        remainingMs={end - now}
+        totalMs={round.timerSeconds * 1000}
+        teamNames={room.teamNames ?? DEFAULT_TEAM_NAMES}
+        busy={choosing}
+        error={error}
+        onChoose={async (team) => {
+          setChoosing(true);
+          setError(null);
+          try {
+            await chooseSide(room.code, player.id, team, round.id);
+          } catch {
+            setError('Could not save your choice (time may be up).');
+          } finally {
+            setChoosing(false);
+          }
+        }}
+      />
+    );
+  }
   const slots = Array.from({ length: round.maxPerStudent }, (_, i) => {
     const s = mine.data.find((x) => x.slot === i + 1);
     return { slot: i + 1, saved: s ? s.originalText : null };

@@ -58,6 +58,7 @@ export async function createRoom(uid: string, rounds: RoundConfig[]): Promise<{ 
       showWallLive: false,
       showDeletions: true,
       hideAuthor: false,
+      pickTeamLater: rounds[0]?.type === 'table',
       teamNames: teamNamesFromRounds(rounds),
       createdAt: serverTimestamp(),
     };
@@ -130,6 +131,7 @@ export async function startRound(room: Room, roundId: string) {
     phase: 'writing',
     currentRoundId: roundId,
     teamNames: teamNamesFromRounds([r]), // the two teams are the two sides of this round
+    pickTeamLater: r.type === 'table', // table round: students read first, then pick a side
     timerEndsAt: Timestamp.fromMillis(serverNow() + r.timerSeconds * 1000),
     currentSentenceId: null,
     sentenceStep: null,
@@ -292,6 +294,12 @@ export type JoinError = 'closed' | 'taken' | 'no-room' | 'invalid';
 
 export function cleanNickname(s: string): string {
   return s.replace(/\s+/g, ' ').replace(/\//g, '').trim();
+}
+
+/** Table rounds: the student picks a side (team) once, after reading the table. */
+export async function chooseSide(roomId: string, playerId: string, team: Team, roundId: string) {
+  const { db } = fb();
+  await updateDoc(rSub(db, roomId, 'players', playerId), { team, sideRound: roundId });
 }
 
 export async function joinRoom(roomId: string, uid: string, nicknameRaw: string, team: Team): Promise<void> {

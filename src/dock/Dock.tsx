@@ -98,8 +98,10 @@ export function Dock({
                     className={small}
                     onClick={() => {
                       if (!window.confirm('Stop the game and go back to the lobby? Scores so far are kept.')) return;
+                      const chosen = rounds.find((r) => r.id === pick) ?? rounds[0];
                       run(() =>
                         api.updateRoom(room.code, {
+                          ...(chosen ? { teamNames: teamNamesFromRounds([chosen]), pickTeamLater: chosen.type === 'table' } : {}),
                           phase: 'lobby',
                           joinOpen: true,
                           timerEndsAt: null,
@@ -171,7 +173,8 @@ export function Dock({
             }
             // In the lobby, the team names follow the round picked in the dock.
             const chosen = rs.find((r) => r.id === pick) ?? rs[0];
-            const teamPatch = room.phase === 'lobby' && chosen ? { teamNames: teamNamesFromRounds([chosen]) } : {};
+            const teamPatch =
+              room.phase === 'lobby' && chosen ? { teamNames: teamNamesFromRounds([chosen]), pickTeamLater: chosen.type === 'table' } : {};
             await api.updateRoom(room.code, { rounds: map, roundOrder: rs.map((r) => r.id), ...teamPatch });
           }}
         />
@@ -219,7 +222,8 @@ function PhaseControls({
           setPick(id);
           // In the lobby, the two teams take the two sides of the chosen round right away.
           const r = rounds.find((x) => x.id === id);
-          if (room.phase === 'lobby' && r) run(() => api.updateRoom(room.code, { teamNames: teamNamesFromRounds([r]) }));
+          if (room.phase === 'lobby' && r)
+            run(() => api.updateRoom(room.code, { teamNames: teamNamesFromRounds([r]), pickTeamLater: r.type === 'table' }));
         }}
       >
         {rounds.map((r, i) => (
@@ -274,7 +278,16 @@ function PhaseControls({
     <>
       <span className="text-paper/70">Play again:</span>
       {startPicker('Start round')}
-      <button className={dark} onClick={() => run(() => api.updateRoom(room.code, { phase: 'lobby', joinOpen: true }))}>
+      <button className={dark} onClick={() => {
+          const chosen = rounds.find((r) => r.id === pick) ?? rounds[0];
+          run(() =>
+            api.updateRoom(room.code, {
+              phase: 'lobby',
+              joinOpen: true,
+              ...(chosen ? { teamNames: teamNamesFromRounds([chosen]), pickTeamLater: chosen.type === 'table' } : {}),
+            }),
+          );
+        }}>
         Back to lobby
       </button>
     </>

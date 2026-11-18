@@ -46,7 +46,9 @@ export function BigLobby({
   teamNames,
   players,
   joinOpen,
+  teamsLater = false,
 }: {
+  teamsLater?: boolean;
   code: string;
   joinUrl: string;
   teamNames: { A: string; B: string };
@@ -77,6 +79,32 @@ export function BigLobby({
           <p className="rounded-lg bg-paper/90 px-[0.6em] py-[0.3em] font-hand text-[1.25em] shadow">
             HR is preparing the office. Please do not touch the coffee machine.
           </p>
+          {teamsLater ? (
+            <div className="paper plain flex min-h-0 flex-1 flex-col p-[0.5em]">
+              <div className="mb-[0.3em] flex items-center justify-between">
+                <span className="text-[0.8em] font-bold">
+                  Candidates <span className="font-normal text-ink/60">· sides are chosen after reading the task: {teamNames.A} or {teamNames.B}</span>
+                </span>
+                <span className="font-serif text-[1.4em] font-black">{players.length}</span>
+              </div>
+              <div className="flex flex-wrap content-start gap-[0.25em] overflow-hidden">
+                <AnimatePresence>
+                  {players.map((p) => (
+                    <motion.span
+                      key={p.id}
+                      layout
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className={cx('rounded-md border border-ink/10 bg-white px-[0.35em] text-[0.85em] font-semibold shadow-sm', !p.online && 'opacity-50')}
+                    >
+                      {p.nickname}
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          ) : (
           <div className="grid min-h-0 flex-1 grid-cols-2 gap-[0.6em]">
             {(['A', 'B'] as Team[]).map((t) => {
               const list = players.filter((p) => p.team === t);
@@ -109,6 +137,7 @@ export function BigLobby({
               );
             })}
           </div>
+          )}
           <p className="text-center font-hand text-[1em] text-ink/80">{GAME_TAGLINE}</p>
         </div>
       </div>

@@ -263,6 +263,7 @@ function HostRoom({ room }: { room: Room }) {
         joinUrl={joinUrl}
         teamNames={teamNames}
         joinOpen={room.joinOpen}
+        teamsLater={room.pickTeamLater === true}
         players={players.data.map((p) => ({ id: p.id, nickname: p.nickname, team: p.team, online: isOnline(p, now) }))}
       />
     );

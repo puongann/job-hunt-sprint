@@ -162,6 +162,7 @@ Key ideas:
 **Tạo phòng**
 3. Chọn vòng muốn chơi trong danh sách ở thanh điều khiển: tên 2 đội đổi theo 2 vế của vòng đó (ví dụ Teacher / YouTuber). Bấm **Create room** là vào phòng ngay.
 4. Màn hình lớn hiện **mã phòng 4 chữ** và **mã QR**. Học sinh quét QR (hoặc vào trang web và nhập mã), đặt biệt danh, chọn Team A hoặc B.
+   - **Vòng có bảng số liệu** (loại *table*, ví dụ "Company or self-employed?"): học sinh **không chọn đội khi vào phòng**. Khi vòng bắt đầu, điện thoại hiện đề và bảng trước, đọc xong mới chọn phe (Company worker / Self-employed), chọn một lần cho cả vòng, rồi mới viết.
 
 **Chơi một vòng**
 5. Thanh điều khiển luôn nằm ở đáy màn hình (`F` để toàn màn hình). Hàng trên là thao tác chơi, nút chính luôn ở góc phải; hàng dưới là cài đặt phòng. Chọn vòng rồi bấm **Start round**. Lúc này học sinh mới không vào được nữa ("Join closed").
