@@ -3,7 +3,8 @@
 # - The project ID is read from the service account key (FIREBASE_SERVICE_ACCOUNT),
 #   so a wrong VITE_FIREBASE_PROJECT_ID secret cannot break the deploy.
 # - Values pasted with extra bits (apiKey: "...", quotes, trailing comma, spaces) are cleaned.
-# - authDomain / storageBucket default from the project ID when not set.
+# - The web config comes from Firebase Hosting's /__/firebase/init.json when available,
+#   so wrong VITE_* secrets cannot break the site. authDomain / storageBucket default from the project ID.
 # Writes VITE_* and FIREBASE_PROJECT to $GITHUB_ENV and the key to $RUNNER_TEMP/sa.json.
 set -euo pipefail
 
@@ -28,17 +29,21 @@ if [ -n "$given" ] && [ "$given" != "$pid" ]; then
   echo "::warning::Secret VITE_FIREBASE_PROJECT_ID does not match the service account's project. Using the service account's project ID instead."
 fi
 
-api=$(clean "${IN_API_KEY:-}")
-app=$(clean "${IN_APP_ID:-}")
-auth=$(clean "${IN_AUTH_DOMAIN:-}");   [ -z "$auth" ] && auth="$pid.firebaseapp.com"
-bucket=$(clean "${IN_STORAGE_BUCKET:-}"); [ -z "$bucket" ] && bucket="$pid.appspot.com"
-sender=$(clean "${IN_SENDER_ID:-}")
+# Firebase Hosting serves the project's real web config at /__/firebase/init.json.
+# It is the source of truth; the secrets are only a fallback (e.g. before the first deploy).
+hosted=$(curl -fsS --max-time 15 "https://$pid.web.app/__/firebase/init.json" 2>/dev/null || true)
+from_hosted() { printf '%s' "$hosted" | jq -r --arg k "$1" '.[$k] // empty' 2>/dev/null || true; }
+pick() { local h; h=$(from_hosted "$1"); if [ -n "$h" ]; then printf '%s' "$h"; else clean "$2"; fi; }
 
-missing=""
-[ -z "$api" ] && missing="$missing VITE_FIREBASE_API_KEY"
-[ -z "$app" ] && missing="$missing VITE_FIREBASE_APP_ID"
-if [ -n "$missing" ]; then
-  echo "::error::Missing GitHub secrets:$missing (see README, 'GitHub + automatic deploy')"
+api=$(pick apiKey "${IN_API_KEY:-}")
+app=$(pick appId "${IN_APP_ID:-}")
+auth=$(pick authDomain "${IN_AUTH_DOMAIN:-}");       [ -z "$auth" ] && auth="$pid.firebaseapp.com"
+bucket=$(pick storageBucket "${IN_STORAGE_BUCKET:-}"); [ -z "$bucket" ] && bucket="$pid.appspot.com"
+sender=$(pick messagingSenderId "${IN_SENDER_ID:-}")
+if [ -n "$hosted" ]; then echo "Web config: taken from Firebase Hosting (init.json)"; else echo "Web config: taken from the GitHub secrets"; fi
+
+if [ -z "$api" ]; then
+  echo "::error::No web API key: set the GitHub secret VITE_FIREBASE_API_KEY (see README, 'GitHub + automatic deploy')"
   exit 1
 fi
 

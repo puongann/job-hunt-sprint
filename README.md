@@ -66,15 +66,13 @@ The web API key in `.env.local` is not a secret in the usual sense: every visito
 
 The code lives on GitHub. **Every push to `main` is checked and deployed automatically** by GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)): typecheck, lint, unit tests, rules tests, build, then `firebase deploy` (Hosting + Firestore rules + indexes). Pull requests get a temporary **preview link** ([.github/workflows/preview.yml](.github/workflows/preview.yml)); previews share the live database.
 
-GitHub needs 3 **secrets** (repo → *Settings → Secrets and variables → Actions → New repository secret*):
+GitHub needs only **one secret** (repo → *Settings → Secrets and variables → Actions → New repository secret*):
 
 | Secret name | Value |
 |---|---|
 | `FIREBASE_SERVICE_ACCOUNT` | the **whole content** of a service account key JSON file (below). The project ID is read from it. |
-| `VITE_FIREBASE_API_KEY` | `apiKey` from the web app config (Project settings → General → Your apps) |
-| `VITE_FIREBASE_APP_ID` | `appId` |
 
-Optional: `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_STORAGE_BUCKET` and `VITE_FIREBASE_MESSAGING_SENDER_ID` (sensible defaults are derived from the project ID). Values pasted with quotes, a trailing comma or `apiKey:` in front are cleaned automatically ([scripts/ci-firebase-config.sh](scripts/ci-firebase-config.sh)).
+The web config (API key, auth domain...) is read automatically from Firebase Hosting (`https://<project-id>.web.app/__/firebase/init.json`), see [scripts/ci-firebase-config.sh](scripts/ci-firebase-config.sh). The `VITE_FIREBASE_*` secrets are only a fallback for the very first deploy if that fails; values pasted with quotes or `apiKey:` in front are cleaned.
 
 **Service account key** (lets GitHub deploy for you):
 1. Firebase console → ⚙ *Project settings → Service accounts → Generate new private key → Generate key*. A `.json` file downloads.
