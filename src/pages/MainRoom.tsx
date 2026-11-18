@@ -206,10 +206,36 @@ function HostRoom({ room }: { room: Room }) {
 
   // Browsers only allow audio after a user gesture: the first click anywhere unlocks sound.
   useEffect(() => {
-    const unlock = () => enableSound();
-    window.addEventListener('pointerdown', unlock, { once: true });
-    return () => window.removeEventListener('pointerdown', unlock);
+    const unlock = () => {
+      enableSound();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, []);
+
+  // Soft cues for the class: a round starts, voting opens, each vote arrives.
+  const lastPhaseKey = useRef<string | null>(null);
+  useEffect(() => {
+    const key = `${room.phase}:${room.currentRoundId}`;
+    if (lastPhaseKey.current !== null && key !== lastPhaseKey.current && room.phase === 'writing') sfx.roundStart();
+    lastPhaseKey.current = key;
+  }, [room.phase, room.currentRoundId]);
+  const lastStep = useRef(room.sentenceStep);
+  useEffect(() => {
+    if (room.sentenceStep === 'voting' && lastStep.current !== 'voting') sfx.votingOpen();
+    lastStep.current = room.sentenceStep;
+  }, [room.sentenceStep, room.currentSentenceId]);
+  const lastVotes = useRef(0);
+  useEffect(() => {
+    if (room.sentenceStep === 'voting' && votes.data.length > lastVotes.current) sfx.vote();
+    lastVotes.current = votes.data.length;
+  }, [votes.data.length, room.sentenceStep]);
 
   // ---------------------------------------------------------------- keyboard shortcuts
   useEffect(() => {

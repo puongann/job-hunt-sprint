@@ -97,6 +97,9 @@ export function SlamStamp({ label, className = '', onLand }: { label: string; cl
     const t = setTimeout(
       () => {
         sfx.thump();
+        if (label === 'HIRED') sfx.hired();
+        else if (label === 'MAYBE') sfx.maybe();
+        else if (label === 'REJECTED') sfx.rejected();
         onLand?.();
       },
       reduce ? 0 : 260,

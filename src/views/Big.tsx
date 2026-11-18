@@ -54,6 +54,11 @@ export function BigLobby({
   joinOpen: boolean;
 }) {
   const host = joinUrl.replace(/^https?:\/\//, '').replace(/\/\?code=.*$/, '');
+  const lastCount = useRef(players.length);
+  useEffect(() => {
+    if (players.length > lastCount.current) sfx.join();
+    lastCount.current = players.length;
+  }, [players.length]);
   return (
     <>
       <Masthead code={code} />
@@ -509,7 +514,7 @@ export function BigLeaderboard({
     const t2 = setTimeout(() => {
       if (winner) {
         sfx.fanfare();
-        confettiWinner(winner === 'A' ? '#3B4CCA' : '#E8590C');
+        confettiWinner(winner === 'A' ? '#4A5FE8' : '#F76B15');
       }
     }, 2200);
     return () => {
