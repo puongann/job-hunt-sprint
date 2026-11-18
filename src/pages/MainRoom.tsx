@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { DEFAULT_TEAM_NAMES } from '../config/brand';
 import { CorrectionEditor } from '../components/Correction';
-import { Btn, Loading, PaperCard } from '../components/ui';
+import { Loading, PaperCard } from '../components/ui';
 import { Dock } from '../dock/Dock';
 import * as api from '../lib/api';
 import {
@@ -29,19 +29,19 @@ export default function MainRoom() {
   const room = useRoom(roomId, !!uid);
   if (error) return <p className="p-8 text-center text-rejected">Could not sign in: {error}</p>;
   if (!uid || room.loading) return <Loading />;
-  if (!room.data) return <NotHost roomId={roomId} reason="missing" />;
-  if (room.data.hostUid !== uid) return <NotHost roomId={roomId} reason="other" />;
+  if (!room.data) return <NotHost reason="missing" />;
+  if (room.data.hostUid !== uid) return <NotHost reason="other" />;
   return <HostRoom room={room.data} />;
 }
 
-function NotHost({ roomId, reason }: { roomId: string; reason: 'missing' | 'other' }) {
+function NotHost({ reason }: { reason: 'missing' | 'other' }) {
   return (
     <div className="cork flex min-h-screen items-center justify-center p-6 text-xl">
       <PaperCard id="nothost" className="max-w-xl p-6 pt-8 text-center">
         <h1 className="font-serif text-3xl font-black">{reason === 'missing' ? 'No office with that code' : 'This main screen is on another browser'}</h1>
-        {reason === 'other' && <p className="mt-2">Use the room code and your host PIN to take it back here.</p>}
-        <Link to={`/main?code=${roomId}`} className="mt-4 inline-block rounded-lg bg-maroon px-4 py-2 font-bold text-paper">
-          Go to Resume room
+        {reason === 'other' && <p className="mt-2">Open it from the laptop and browser that created this room.</p>}
+        <Link to="/main" className="mt-4 inline-block rounded-lg bg-maroon px-4 py-2 font-bold text-paper">
+          Back to the start page
         </Link>
       </PaperCard>
     </div>
@@ -66,9 +66,6 @@ export interface HostCtx {
 }
 
 function HostRoom({ room }: { room: Room }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [pin, setPin] = useState<string | null>((location.state as { pin?: string } | null)?.pin ?? null);
   const players = usePlayers(room.code);
   const allSentences = useAllSentences(room.code);
   const requests = useRejoinRequests(room.code);
@@ -76,12 +73,6 @@ function HostRoom({ room }: { room: Room }) {
   const votes = useVotesFor(room.code, room.currentSentenceId, room.phase === 'review' && room.sentenceStep === 'voting');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-
-  // Remove the PIN from history state so a reload does not show it again.
-  useEffect(() => {
-    if (pin) navigate(location.pathname, { replace: true, state: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     api.rememberHostedRoom(room.code);
@@ -375,47 +366,10 @@ function HostRoom({ room }: { room: Room }) {
         )}
       </AnimatePresence>
 
-      {pin && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/80 p-6">
-          <PaperCard id="pin" className="max-w-lg p-8 pt-10 text-center text-xl">
-            <p className="font-serif text-2xl font-black">Your host PIN</p>
-            <PinReveal pin={pin} />
-            <p>Write this down. It lets you take the main screen back.</p>
-            <p className="mt-2 text-base text-ink/70">
-              The projector may be on, so the PIN shows only while you hold the button. It will not be shown again.
-            </p>
-            <Btn className="mt-6 h-14 w-full text-xl" onClick={() => setPin(null)}>
-              I wrote it down
-            </Btn>
-          </PaperCard>
-        </div>
-      )}
     </div>
   );
 }
 
-
-function PinReveal({ pin }: { pin: string }) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="my-4 flex flex-col items-center gap-3">
-      <p className="font-mono text-6xl font-black tracking-[0.25em] text-maroon" aria-live="polite">
-        {show ? pin : '••••••'}
-      </p>
-      <button
-        type="button"
-        className="select-none rounded-lg bg-ink px-4 py-3 text-base font-bold text-paper"
-        onPointerDown={() => setShow(true)}
-        onPointerUp={() => setShow(false)}
-        onPointerLeave={() => setShow(false)}
-        onKeyDown={(e) => e.key === ' ' && setShow(true)}
-        onKeyUp={() => setShow(false)}
-      >
-        Hold to reveal the PIN
-      </button>
-    </div>
-  );
-}
 
 export function isTyping(e: KeyboardEvent): boolean {
   const t = e.target;

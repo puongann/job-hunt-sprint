@@ -160,7 +160,7 @@ Key ideas:
 2. (Nên làm) Bấm **Play demo** để chiếu cho học sinh xem cách chơi trong 2-3 phút. Phím: `Space`/`→` sang bước tiếp, `←` lùi, `A` tự chạy, `Esc` thoát. Cuối demo bấm **Start for real**.
 
 **Tạo phòng**
-3. Bấm **Create room**. Màn hình hiện **mã PIN 6 số** (giữ nút để xem, vì máy chiếu có thể đang bật). **Ghi PIN ra giấy**: nếu trình duyệt bị mất dữ liệu, PIN giúp bạn lấy lại màn hình chính.
+3. Chọn vòng muốn chơi trong danh sách ở thanh điều khiển: tên 2 đội đổi theo 2 vế của vòng đó (ví dụ Teacher / YouTuber). Bấm **Create room** là vào phòng ngay.
 4. Màn hình lớn hiện **mã phòng 4 chữ** và **mã QR**. Học sinh quét QR (hoặc vào trang web và nhập mã), đặt biệt danh, chọn Team A hoặc B.
 
 **Chơi một vòng**
@@ -180,7 +180,7 @@ Key ideas:
 
 **Khi có sự cố**
 - **Học sinh bị thoát / đổi máy:** bấm **Show rejoin QR** (mở 3 phút, có +1 min và Close). Học sinh quét QR, chọn đúng tên mình. Trên thanh điều khiển hiện yêu cầu: nhìn đúng người rồi bấm **Approve**. Học sinh quay lại đúng đội, giữ nguyên câu và phiếu bầu.
-- **Trình duyệt máy chính bị mất dữ liệu:** mở `/main` trên trình duyệt khác, phần **Resume room** nhập mã phòng + PIN.
+- **Lỡ đóng tab màn hình chính:** mở lại `/main` trên **cùng laptop, cùng trình duyệt**, phần **Resume room** bấm vào mã phòng.
 - **Dừng chơi bất cứ lúc nào:** nút **⏹ Back to lobby** (hàng dưới thanh điều khiển). Điểm đã chấm được giữ lại.
 - **Ẩn tên tác giả:** mặc định tên người viết hiện ngay. Muốn giấu đến lúc công bố: **⚙ Settings** → tick **Hide the author**.
 - **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.

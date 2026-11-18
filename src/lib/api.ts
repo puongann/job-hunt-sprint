@@ -129,6 +129,7 @@ export async function startRound(room: Room, roundId: string) {
   await updateRoom(room.code, {
     phase: 'writing',
     currentRoundId: roundId,
+    teamNames: teamNamesFromRounds([r]), // the two teams are the two sides of this round
     timerEndsAt: Timestamp.fromMillis(serverNow() + r.timerSeconds * 1000),
     currentSentenceId: null,
     sentenceStep: null,

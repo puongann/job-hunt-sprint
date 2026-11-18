@@ -38,6 +38,7 @@ export function Dock({
   const { room, run } = ctx;
   const [panel, setPanel] = useState<Panel>(null);
   const [editor, setEditor] = useState(false);
+  const [pick, setPick] = useState<string>('');
   const sound = useSoundState();
 
   // Show the dock when a rejoin request arrives.
@@ -77,7 +78,7 @@ export function Dock({
             <div className="bg-ink/95 shadow-[0_-8px_24px_rgba(0,0,0,.35)] ring-1 ring-white/10">
               {/* Row 1: what you do now in the game */}
               <div className="flex flex-wrap items-center gap-2 px-3 pb-1.5 pt-2">
-                <PhaseControls ctx={ctx} rounds={rounds} now={now} openQueue={() => toggle('queue')} queueOpen={panel === 'queue'} />
+                <PhaseControls ctx={ctx} rounds={rounds} now={now} openQueue={() => toggle('queue')} queueOpen={panel === 'queue'} pick={pick} setPick={setPick} />
               </div>
               {/* Row 2: room and settings */}
               <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-3 py-1.5">
@@ -168,8 +169,9 @@ export function Dock({
             if (room.currentRoundId && !map[room.currentRoundId] && room.rounds[room.currentRoundId]) {
               map[room.currentRoundId] = room.rounds[room.currentRoundId];
             }
-            // Before the game starts, the team names follow the first round's options.
-            const teamPatch = room.phase === 'lobby' && !room.currentRoundId ? { teamNames: teamNamesFromRounds(rs) } : {};
+            // In the lobby, the team names follow the round picked in the dock.
+            const chosen = rs.find((r) => r.id === pick) ?? rs[0];
+            const teamPatch = room.phase === 'lobby' && chosen ? { teamNames: teamNamesFromRounds([chosen]) } : {};
             await api.updateRoom(room.code, { rounds: map, roundOrder: rs.map((r) => r.id), ...teamPatch });
           }}
         />
@@ -190,17 +192,20 @@ function PhaseControls({
   now,
   openQueue,
   queueOpen,
+  pick,
+  setPick,
 }: {
   ctx: HostCtx;
   rounds: RoundConfig[];
   now: number;
   openQueue: () => void;
   queueOpen: boolean;
+  pick: string;
+  setPick: (id: string) => void;
 }) {
   const { room, run, busy } = ctx;
   const playedIdx = rounds.findIndex((r) => r.id === room.currentRoundId);
   const nextRound = rounds[playedIdx + 1] ?? null;
-  const [pick, setPick] = useState<string>('');
   const selected = pick || (room.phase === 'lobby' ? rounds[0]?.id : nextRound?.id) || rounds[0]?.id || '';
 
   const startPicker = (label: string) => (
@@ -209,7 +214,13 @@ function PhaseControls({
       <select
         className="h-10 max-w-[16rem] rounded-md bg-white/10 px-2 text-[15px] text-paper"
         value={selected}
-        onChange={(e) => setPick(e.target.value)}
+        onChange={(e) => {
+          const id = e.target.value;
+          setPick(id);
+          // In the lobby, the two teams take the two sides of the chosen round right away.
+          const r = rounds.find((x) => x.id === id);
+          if (room.phase === 'lobby' && r) run(() => api.updateRoom(room.code, { teamNames: teamNamesFromRounds([r]) }));
+        }}
       >
         {rounds.map((r, i) => (
           <option key={r.id} value={r.id} className="text-ink">

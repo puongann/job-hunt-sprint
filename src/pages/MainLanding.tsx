@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { GAME_NAME, GAME_TAGLINE } from '../config/brand';
 import { Btn, Loading, PaperCard } from '../components/ui';
 import { RoundEditor } from '../dock/RoundEditor';
-import { claimHost, createRoom, hostedRooms } from '../lib/api';
+import { createRoom, hostedRooms } from '../lib/api';
 import { firebaseConfigured } from '../lib/firebase';
 import { useAuthUid } from '../lib/hooks';
-import { normalizeCode } from '../lib/ids';
 import { loadTemplates } from '../lib/rounds';
 
 export default function MainLanding() {
@@ -16,13 +15,10 @@ export default function MainLanding() {
 
 function Landing() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const { uid, error } = useAuthUid();
   const [templates, setTemplates] = useState(loadTemplates);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [code, setCode] = useState(normalizeCode(params.get('code') ?? ''));
-  const [pin, setPin] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const recent = hostedRooms();
 
@@ -52,8 +48,8 @@ function Landing() {
                 setBusy(true);
                 setMsg(null);
                 try {
-                  const { code: c, pin: p } = await createRoom(uid, templates);
-                  navigate(`/main/${c}`, { state: { pin: p } });
+                  const { code: c } = await createRoom(uid, templates);
+                  navigate(`/main/${c}`);
                 } catch (e) {
                   setMsg((e as Error).message);
                 } finally {
@@ -76,39 +72,7 @@ function Landing() {
                 ))}
               </div>
             )}
-            <form
-              className="flex flex-col gap-2"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setBusy(true);
-                setMsg(null);
-                try {
-                  await claimHost(code, uid, pin.trim());
-                  navigate(`/main/${code}`);
-                } catch (err) {
-                  setMsg((err as Error).message);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <input
-                value={code}
-                onChange={(e) => setCode(normalizeCode(e.target.value))}
-                placeholder="Room code"
-                className="h-12 rounded-lg border-2 border-ink/20 bg-white px-3 font-mono text-xl uppercase tracking-widest"
-              />
-              <input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="6-digit host PIN"
-                inputMode="numeric"
-                className="h-12 rounded-lg border-2 border-ink/20 bg-white px-3 font-mono text-xl tracking-widest"
-              />
-              <Btn type="submit" disabled={busy || code.length !== 4 || pin.length !== 6}>
-                Take the main screen back
-              </Btn>
-            </form>
+            {recent.length === 0 && <p className="text-base text-ink/70">Rooms you create on this browser appear here.</p>}
           </PaperCard>
           <PaperCard id="demo" className="flex flex-col gap-3 p-5 pt-7">
             <h2 className="font-serif text-2xl font-black">Play demo</h2>
