@@ -1,11 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { teamNamesFromRounds } from '../config/brand';
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
-import { cx } from '../components/ui';
+import { STAMPS, cx } from '../components/ui';
 import * as api from '../lib/api';
 import { isOnline } from '../lib/hooks';
 import { enableSound, setMuted, useSoundState } from '../lib/sound';
-import type { Player, RejoinRequest, RoundConfig, Score, Team } from '../lib/types';
+import type { Player, RejoinRequest, RoundConfig, Team } from '../lib/types';
 import { toggleFullscreen } from '../lib/fx';
 import { isTyping, type HostCtx } from '../pages/MainRoom';
 import { RoundEditor } from './RoundEditor';
@@ -17,8 +17,8 @@ type Panel = 'players' | 'rejoin' | 'queue' | 'simulate' | null;
 
 const dockBtn =
   'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-35';
-const dark = `${dockBtn} bg-white/10 text-paper hover:bg-white/20`;
-const prim = `${dockBtn} bg-maroon text-paper hover:brightness-110 ring-1 ring-white/20`;
+const dark = `${dockBtn} bg-ink/[0.06] text-ink hover:bg-ink/[0.12]`;
+const prim = `${dockBtn} bg-maroon text-paper hover:brightness-110`;
 
 export function Dock({
   ctx,
@@ -81,7 +81,7 @@ export function Dock({
       {!shown && (
         <button
           onClick={() => setVisible(true)}
-          className="absolute bottom-0 left-1/2 z-40 h-3 w-40 -translate-x-1/2 rounded-t-lg bg-paper/40 hover:bg-paper/80"
+          className="absolute bottom-0 left-1/2 z-40 h-3 w-40 -translate-x-1/2 rounded-t-lg bg-paper/40 hover:bg-paper/90 shadow"
           aria-label="Show controls (H)"
           title="Show controls (H)"
         />
@@ -93,7 +93,7 @@ export function Dock({
             animate={{ y: 0 }}
             exit={{ y: 90 }}
             transition={{ type: 'tween', duration: 0.2 }}
-            className="absolute inset-x-0 bottom-0 z-40 text-paper"
+            className="absolute inset-x-0 bottom-0 z-40 text-ink"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
           >
@@ -103,7 +103,7 @@ export function Dock({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="mx-auto mb-2 max-h-[55vh] w-[min(980px,96vw)] overflow-y-auto rounded-xl bg-ink/95 p-4 shadow-2xl ring-1 ring-white/10"
+                  className="mx-auto mb-2 max-h-[55vh] w-[min(980px,96vw)] overflow-y-auto rounded-xl bg-paper/97 p-4 shadow-2xl ring-1 ring-ink/10"
                 >
                   {panel === 'players' && <PlayersPanel ctx={ctx} players={players} now={now} />}
                   {panel === 'rejoin' && <RejoinPanel ctx={ctx} players={players} requests={requests} now={now} />}
@@ -116,14 +116,14 @@ export function Dock({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="flex flex-wrap items-center gap-2 bg-ink/95 px-3 py-2 shadow-[0_-8px_24px_rgba(0,0,0,.35)] backdrop-blur">
+            <div className="flex flex-wrap items-center gap-2 bg-paper/95 px-3 py-2 shadow-[0_-6px_20px_rgba(80,50,10,.18)] ring-1 ring-ink/10 backdrop-blur">
               <span className="rounded bg-maroon px-2 py-1 font-mono text-lg font-black tracking-widest">{room.code}</span>
               <button className={dark} onClick={() => toggle('players')} aria-pressed={panel === 'players'}>
-                👥 {players.length} <span className="text-teamA brightness-150">A {counts.A}</span> /{' '}
-                <span className="text-teamB brightness-125">B {counts.B}</span>
+                👥 {players.length} <span className="text-teamA">A {counts.A}</span> /{' '}
+                <span className="text-teamB">B {counts.B}</span>
               </button>
               <button
-                className={cx(dark, room.joinOpen ? 'text-hired brightness-150' : 'text-paper/60')}
+                className={cx(dark, room.joinOpen ? 'text-hired' : 'text-ink/50')}
                 onClick={() => run(() => api.updateRoom(room.code, { joinOpen: !room.joinOpen }))}
                 title="Allow brand-new players to join"
               >
@@ -153,7 +153,7 @@ export function Dock({
                     {sound.muted ? '🔇' : '🔊'}
                   </button>
                 ) : (
-                  <button className={`${dockBtn} bg-paper text-ink`} onClick={enableSound}>
+                  <button className={`${dockBtn} bg-maroon text-paper`} onClick={enableSound}>
                     🔊 Enable sound
                   </button>
                 )}
@@ -190,7 +190,7 @@ export function Dock({
 }
 
 function Sep() {
-  return <span className="mx-1 h-7 w-px bg-white/20" />;
+  return <span className="mx-1 h-7 w-px bg-ink/15" />;
 }
 
 // ------------------------------------------------------------------ phase controls
@@ -217,7 +217,7 @@ function PhaseControls({
   const startPicker = (label: string) => (
     <>
       <select
-        className="h-10 max-w-[16rem] rounded-md bg-white/10 px-2 text-[15px] text-paper"
+        className="h-10 max-w-[16rem] rounded-md bg-ink/[0.06] px-2 text-[15px] text-ink"
         value={selected}
         onChange={(e) => setPick(e.target.value)}
       >
@@ -270,7 +270,7 @@ function PhaseControls({
   // leaderboard
   return (
     <>
-      <span className="text-paper/70">Play again:</span>
+      <span className="text-ink/60">Play again:</span>
       {startPicker('Start round')}
       <button className={dark} onClick={() => run(() => api.updateRoom(room.code, { phase: 'lobby', joinOpen: true }))}>
         Back to lobby
@@ -313,7 +313,7 @@ function ReviewControls({
 
   return (
     <>
-      <button className={cx(dark, queueOpen && 'bg-white/25')} onClick={openQueue} title="Review queue">
+      <button className={cx(dark, queueOpen && 'bg-ink/15')} onClick={openQueue} title="Review queue">
         ☰ {lockedCount}/{queue.length}
       </button>
       {current && !current.locked && (
@@ -326,7 +326,7 @@ function ReviewControls({
             Reset correction
           </button>
           <button
-            className={cx(dark, !room.showDeletions && 'bg-white/25')}
+            className={cx(dark, !room.showDeletions && 'bg-ink/15')}
             onClick={() => run(() => api.updateRoom(room.code, { showDeletions: !room.showDeletions }))}
           >
             {room.showDeletions ? 'Hide deletions' : 'Show deletions'}
@@ -336,27 +336,31 @@ function ReviewControls({
       {current && !current.locked && (step === 'voting' || step === 'scoring') && (
         <>
           <Sep />
-          <span className="text-sm text-paper/70">Score:</span>
-          {([0, 1, 2] as Score[]).map((v) => (
-            <button
-              key={v}
-              className={cx(
-                dockBtn,
-                'w-11 text-lg',
-                current.teacherScore === v
-                  ? v === 0
-                    ? 'bg-rejected text-white'
-                    : v === 1
-                      ? 'bg-maybe text-ink'
-                      : 'bg-hired text-white'
-                  : 'bg-white/10 hover:bg-white/20',
-              )}
-              onClick={() => ctx.score(v)}
-              title={`Score ${v} (key ${v})`}
-            >
-              {v}
-            </button>
-          ))}
+          <span className="text-sm text-ink/60">Score:</span>
+          {STAMPS.map((st) => {
+            const on = current.teacherScore === st.value;
+            return (
+              <button
+                key={st.value}
+                className={cx(
+                  dockBtn,
+                  'gap-2 border-2 px-3',
+                  on ? `${st.bg} border-ink ${st.value === 1 ? 'text-ink' : 'text-white'} shadow-md` : 'border-ink/10 bg-paper hover:border-ink/30',
+                )}
+                onClick={() => ctx.score(st.value)}
+                title={`${st.label} = ${st.value} (key ${st.value})`}
+                aria-pressed={on}
+              >
+                <span
+                  className={cx('stamp text-[13px]', on ? (st.value === 1 ? 'text-ink' : 'text-white') : st.cls)}
+                  style={{ transform: `rotate(${st.value === 1 ? 2 : -3}deg)`, mixBlendMode: 'normal' }}
+                >
+                  {st.label}
+                </span>
+                <span className={cx('text-lg font-black', on ? (st.value === 1 ? 'text-ink' : 'text-white') : 'text-ink/40')}>{st.value}</span>
+              </button>
+            );
+          })}
           <button
             className={cx(dark, current.challenge && 'bg-maybe text-ink hover:bg-maybe')}
             onClick={ctx.toggleStar}
@@ -433,20 +437,20 @@ function PlayersPanel({ ctx, players, now }: { ctx: HostCtx; players: Player[]; 
   return (
     <>
       <PanelTitle>Staff list</PanelTitle>
-      {sorted.length === 0 && <p className="text-paper/70">Nobody yet. Show the QR code.</p>}
+      {sorted.length === 0 && <p className="text-ink/60">Nobody yet. Show the QR code.</p>}
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 md:grid-cols-3">
         {sorted.map((p) => {
           const other: Team = p.team === 'A' ? 'B' : 'A';
           return (
-            <div key={p.id} className="flex items-center gap-2 border-b border-white/10 py-1">
+            <div key={p.id} className="flex items-center gap-2 border-b border-ink/10 py-1">
               <span
-                className={cx('h-3 w-3 shrink-0 rounded-full', isOnline(p, now) ? 'bg-hired' : 'bg-white/30')}
+                className={cx('h-3 w-3 shrink-0 rounded-full', isOnline(p, now) ? 'bg-hired' : 'bg-ink/20')}
                 title={isOnline(p, now) ? 'online' : 'offline (no heartbeat for 30 s)'}
               />
               <span className="flex-1 truncate font-semibold">{p.nickname}</span>
               <span className={cx('rounded px-1.5 text-sm font-bold', p.team === 'A' ? 'bg-teamA' : 'bg-teamB')}>{p.team}</span>
               <button
-                className="rounded bg-white/10 px-2 text-sm hover:bg-white/20"
+                className="rounded bg-ink/[0.06] px-2 text-sm hover:bg-ink/[0.12]"
                 onClick={() => run(() => api.movePlayerTeam(room.code, p, other, sentences))}
                 title={`Move to team ${other}`}
               >
@@ -486,21 +490,21 @@ function RejoinPanel({ ctx, players, requests, now }: { ctx: HostCtx; players: P
       >
         Rejoin desk
       </PanelTitle>
-      <p className="mb-3 text-sm text-paper/70">
+      <p className="mb-3 text-sm text-ink/60">
         A student who lost their session scans the QR, picks their name, and waits. Check who is holding the phone, then approve.
       </p>
       {requests.length === 0 ? (
-        <p className="text-paper/70">No pending requests.</p>
+        <p className="text-ink/60">No pending requests.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {requests.map((r) => {
             const p = players.find((x) => x.id === r.playerId);
             return (
-              <li key={r.id} className="flex items-center gap-3 rounded-lg bg-white/10 p-3">
+              <li key={r.id} className="flex items-center gap-3 rounded-lg bg-ink/[0.06] p-3">
                 <span className="flex-1 text-lg">
                   A new phone wants to be <b>'{p?.nickname ?? '?'}'</b> (Team {p?.team ?? '?'})
                   {p && (
-                    <span className="ml-2 text-sm text-paper/60">
+                    <span className="ml-2 text-sm text-ink/50">
                       {isOnline(p, now) ? '· old phone still online' : '· old phone offline'}
                     </span>
                   )}
@@ -540,15 +544,15 @@ function QueuePanel({ ctx, close }: { ctx: HostCtx; close: () => void }) {
                   void run(() => api.goToSentence(room, s));
                 }}
                 className={cx(
-                  'flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-white/10',
+                  'flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-ink/[0.06]',
                   current && 'bg-maroon',
                 )}
               >
-                <span className="w-7 text-right font-mono text-paper/60">{i + 1}</span>
+                <span className="w-7 text-right font-mono text-ink/50">{i + 1}</span>
                 <span className="flex-1 truncate">{s.correctedText ?? s.originalText}</span>
                 {pinned && <span title="pinned">📌</span>}
                 {s.challenge && <span>⭐</span>}
-                <span className={cx('w-14 text-right font-mono', s.locked ? 'text-hired brightness-150' : 'text-paper/40')}>
+                <span className={cx('w-14 text-right font-mono', s.locked ? 'text-hired' : 'text-ink/40')}>
                   {s.locked ? s.finalScore?.toFixed(2) : '—'}
                 </span>
               </button>

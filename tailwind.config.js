@@ -4,20 +4,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        maroon: '#7E1D18',
+        maroon: '#B3261E',
         paper: '#FFF8EC',
         ink: '#2A1514',
-        cork: '#C9A66B',
-        hired: '#2E7D4F',
-        maybe: '#E0A100',
-        rejected: '#C0392B',
-        teamA: '#3B4CCA',
-        teamB: '#E8590C',
+        cork: '#EAD7AE',
+        hired: '#1F9D55',
+        maybe: '#F2B200',
+        rejected: '#E04535',
+        teamA: '#4A5FE8',
+        teamB: '#F76B15',
       },
       fontFamily: {
         serif: ['Fraunces', 'Georgia', 'serif'],
         sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
-        hand: ['Caveat', 'cursive'],
+        hand: ['Nunito', 'system-ui', 'sans-serif'],
       },
     },
   },

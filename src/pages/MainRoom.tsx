@@ -317,7 +317,7 @@ function HostRoom({ room }: { room: Room }) {
   const rejoinRemaining = (room.rejoinExpiresAt?.toMillis() ?? 0) - now;
 
   return (
-    <div className="fixed inset-0 bg-ink">
+    <div className="fixed inset-0 bg-cork">
       <Stage>{view}</Stage>
       <div className="stage-wrap pointer-events-none absolute inset-0">
         <div className="stage relative h-full">

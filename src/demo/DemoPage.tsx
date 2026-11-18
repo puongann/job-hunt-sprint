@@ -132,7 +132,7 @@ export default function DemoPage() {
   const { big, phone, phone2, caption } = useScene(step, t, () => navigate('/main'));
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-ink text-paper">
+    <div className="flex h-screen flex-col overflow-hidden bg-cork text-ink">
       {/* progress bar with step names */}
       <div className="flex items-center gap-3 px-4 py-2">
         <span className="hidden shrink-0 font-serif text-lg font-black lg:inline">{GAME_NAME} · demo</span>
@@ -143,7 +143,7 @@ export default function DemoPage() {
                 onClick={() => setStep(i)}
                 className={cx(
                   'w-full rounded px-1 py-1 text-xs font-bold uppercase tracking-wide transition',
-                  i === step ? 'bg-maroon text-paper' : i < step ? 'bg-white/30 text-paper' : 'bg-white/10 text-paper/60',
+                  i === step ? 'bg-maroon text-paper' : i < step ? 'bg-ink/25 text-ink' : 'bg-ink/[0.07] text-ink/50',
                 )}
               >
                 {i + 1}
@@ -153,17 +153,17 @@ export default function DemoPage() {
           ))}
         </ol>
         {!sound.enabled ? (
-          <button onClick={enableSound} className="shrink-0 whitespace-nowrap rounded bg-paper px-3 py-1 text-sm font-semibold text-ink">
+          <button onClick={enableSound} className="shrink-0 whitespace-nowrap rounded bg-maroon px-3 py-1 text-sm font-semibold text-paper">
             🔊 Enable sound
           </button>
         ) : (
-          <button onClick={() => setMuted(!sound.muted)} className="rounded bg-white/10 px-3 py-1" title="Mute">
+          <button onClick={() => setMuted(!sound.muted)} className="rounded bg-ink/[0.07] px-3 py-1" title="Mute">
             {sound.muted ? '🔇' : '🔊'}
           </button>
         )}
         <button
           onClick={() => setAuto((a) => !a)}
-          className={cx('shrink-0 whitespace-nowrap rounded px-3 py-1 text-sm', auto ? 'bg-maybe text-ink' : 'bg-white/10')}
+          className={cx('shrink-0 whitespace-nowrap rounded px-3 py-1 text-sm', auto ? 'bg-maybe text-ink' : 'bg-ink/[0.07]')}
         >
           {auto ? '❚❚ Auto' : '▶ Auto (A)'}
         </button>
@@ -171,7 +171,7 @@ export default function DemoPage() {
 
       <div className="flex min-h-0 flex-1 gap-4 px-4 pb-3">
         <div className="flex min-w-0 flex-[7] flex-col justify-center">
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-2xl ring-1 ring-ink/10">
             <Stage>{big}</Stage>
           </div>
           <AnimatePresence mode="wait">
@@ -185,7 +185,7 @@ export default function DemoPage() {
               {caption}
             </motion.p>
           </AnimatePresence>
-          <p className="mt-1 text-center text-sm text-paper/50">Space / → next · ← back · A auto-play · Esc exit</p>
+          <p className="mt-1 text-center text-sm text-ink/50">Space / → next · ← back · A auto-play · Esc exit</p>
         </div>
         <div className="flex shrink-0 items-center justify-center gap-3">
           <PhoneMockup label={phone.label}>{phone.node}</PhoneMockup>
@@ -221,7 +221,7 @@ function PhoneMockup({ children, label, small }: { children: ReactNode; label: s
           <div className="no-scrollbar h-[760px] w-[360px] overflow-y-auto overflow-x-hidden rounded-[34px] bg-cork text-ink">{children}</div>
         </div>
       </div>
-      <span className="text-sm text-paper/70">{label}</span>
+      <span className="text-sm text-ink/60">{label}</span>
     </div>
   );
 }
