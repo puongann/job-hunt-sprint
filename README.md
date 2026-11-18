@@ -1,4 +1,4 @@
-# Red Pen Rumble
+# Whose chance?
 
 A real-time classroom grammar game. Students write sentences on their phones, the teacher corrects them live in red on the projector, the class votes REJECTED / MAYBE / HIRED, the teacher scores, and two teams compete.
 

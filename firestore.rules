@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Red Pen Rumble - Firestore security rules.
+// Whose chance? - Firestore security rules.
 // Identity model: a student's stable identity is a playerId. Every "who is this student"
 // check goes through rooms/{roomId}/members/{request.auth.uid}. We never compare
 // request.auth.uid with an author id directly.

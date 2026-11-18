@@ -121,7 +121,7 @@ export function parseRounds(input: unknown): RoundConfig[] {
 }
 
 export function exportRoundsFile(rounds: RoundConfig[]) {
-  const blob = new Blob([JSON.stringify({ app: 'red-pen-rumble', version: 1, rounds }, null, 2)], {
+  const blob = new Blob([JSON.stringify({ app: 'whose-chance', version: 1, rounds }, null, 2)], {
     type: 'application/json',
   });
   const url = URL.createObjectURL(blob);
