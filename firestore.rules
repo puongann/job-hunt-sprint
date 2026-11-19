@@ -43,8 +43,8 @@ service cloud.firestore {
     function validText(t) {
       return t is string && t.size() >= 1 && t.size() <= 200;
     }
-    // TTL: every doc carries its room's expireAt, so the whole room is deleted together
-    // (a Firestore TTL policy on expireAt in each collection group does the deleting).
+    // Every doc carries its room's expireAt (creation + 24h): old rooms are easy to spot and
+    // delete, and a Firestore TTL policy on expireAt can delete them on the Blaze plan.
     function sameExpiry(r) {
       return request.resource.data.get('expireAt', null) == r.get('expireAt', null);
     }

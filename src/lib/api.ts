@@ -23,8 +23,8 @@ import type { Player, RejoinRequest, Room, RoundConfig, Score, Sentence, Team } 
 
 const rRoom = (db: Firestore, roomId: string) => doc(db, 'rooms', roomId);
 
-/** Rooms (and everything in them) are deleted automatically by a Firestore TTL policy
- *  on `expireAt`, about 24 hours after the room was created. Every doc copies the room's value. */
+/** Every doc of a room carries `expireAt` (creation + 24h), copied from the room. Rooms are
+ *  deleted by hand for now (Spark plan); on Blaze a Firestore TTL policy on `expireAt` can do it. */
 export const ROOM_LIFETIME_MS = 24 * 60 * 60 * 1000;
 const expiryCache = new Map<string, Timestamp | null>();
 async function expiry(db: Firestore, roomId: string): Promise<{ expireAt?: Timestamp }> {

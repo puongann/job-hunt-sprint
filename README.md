@@ -186,4 +186,7 @@ Key ideas:
 - **Ẩn tên tác giả:** mặc định tên người viết hiện ngay. Muốn giấu đến lúc công bố: **⚙ Settings** → tick **Hide the author**.
 - **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
 - Âm thanh: bấm **Enable sound** một lần; nút 🔊/🔇 để tắt tiếng.
-- **Phòng tự xoá sau 24 giờ:** mỗi phòng (và toàn bộ tên, câu viết, phiếu bầu trong đó) tự bị xoá khoảng 24 giờ sau khi tạo. Firestore có thể xoá trễ thêm tới khoảng 1 ngày. Mỗi buổi học hãy tạo phòng mới.
+- **Xoá phòng cũ (thủ công):** dự án dùng gói miễn phí Spark nên phòng **không tự xoá**. Thỉnh thoảng (ví dụ cuối tuần) vào Firebase console → **Firestore Database → Data**:
+  1. Cột **rooms**: bấm vào mã phòng cũ → nút **⋮** cạnh tên phòng → **Delete document** → tick xoá cả dữ liệu bên trong (subcollections) → **Delete**. Thao tác này xoá luôn tên học sinh, câu viết và phiếu bầu của phòng đó.
+  2. Cột **roomSecrets**: xoá document có cùng mã phòng.
+  3. Mỗi phòng có trường `expireAt` (lúc tạo + 24 giờ). Phòng nào có `expireAt` đã qua là phòng cũ, xoá thoải mái. Nếu sau này nâng lên gói Blaze, có thể bật TTL trên `expireAt` để Firestore tự xoá.
