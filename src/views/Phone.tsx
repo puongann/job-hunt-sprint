@@ -183,6 +183,8 @@ export function PhoneChooseSide({
   totalMs,
   teamNames,
   onChoose,
+  onCancel,
+  current,
   busy,
   error,
 }: {
@@ -191,6 +193,10 @@ export function PhoneChooseSide({
   totalMs: number;
   teamNames: { A: string; B: string };
   onChoose?: (team: Team) => void;
+  /** Changing an existing choice: go back to writing without changing. */
+  onCancel?: () => void;
+  /** The side already chosen (when changing). */
+  current?: Team;
   busy?: boolean;
   error?: string | null;
 }) {
@@ -208,7 +214,9 @@ export function PhoneChooseSide({
         {round.closingLine && <p className="mt-2 font-hand text-xl text-maroon">{round.closingLine}</p>}
       </PaperCard>
       <div className="paper plain flex flex-col gap-2 p-4">
-        <p className="text-center font-serif text-lg font-black">Read it all? Now choose your side:</p>
+        <p className="text-center font-serif text-lg font-black">
+          {current ? 'Changed your mind? Choose your side:' : 'Read it all? Now choose your side:'}
+        </p>
         <div className="grid grid-cols-2 gap-2">
           {(['A', 'B'] as Team[]).map((t) => (
             <button
@@ -219,13 +227,22 @@ export function PhoneChooseSide({
               className={cx(
                 'flex min-h-[72px] items-center justify-center rounded-xl px-2 text-center text-lg font-bold leading-tight text-white shadow transition active:scale-[0.98] disabled:opacity-50',
                 t === 'A' ? 'bg-teamA' : 'bg-teamB',
+                current === t && 'ring-4 ring-ink ring-offset-2 ring-offset-paper',
               )}
             >
               {teamNames[t]}
+              {current === t && ' ✓'}
             </button>
           ))}
         </div>
-        <p className="text-center text-sm text-ink/60">You cannot change it later in this round.</p>
+        <p className="text-center text-sm text-ink/60">
+          You can still change it while the timer is running. Sentences you already sent move with you.
+        </p>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={busy} className="min-h-[44px] font-semibold text-ink/70 underline">
+            Keep my side, back to writing
+          </button>
+        )}
         {error && <p className="text-center font-semibold text-rejected">{error}</p>}
       </div>
     </>
@@ -241,7 +258,12 @@ export function PhoneWriting({
   draftsOverride,
   savingSlot,
   error,
+  side,
+  onChangeSide,
 }: {
+  /** Table rounds: the side chosen, shown with a "Change" button. */
+  side?: { team: Team; name: string };
+  onChangeSide?: () => void;
   round: RoundConfig;
   remainingMs: number;
   totalMs: number;
@@ -282,6 +304,20 @@ export function PhoneWriting({
         )}
         {round.closingLine && <p className="mt-2 font-hand text-xl text-maroon">{round.closingLine}</p>}
       </PaperCard>
+
+      {side && (
+        <div className="paper plain flex items-center justify-between gap-2 px-4 py-2">
+          <span>
+            Your side:{' '}
+            <b className={cx('rounded-full px-2 py-0.5 text-white', side.team === 'A' ? 'bg-teamA' : 'bg-teamB')}>{side.name}</b>
+          </span>
+          {onChangeSide && !timeUp && (
+            <button type="button" onClick={onChangeSide} className="min-h-[44px] rounded-full border-2 border-ink px-3 text-sm font-bold">
+              Change side
+            </button>
+          )}
+        </div>
+      )}
 
       {round.challenges.length > 0 && (
         <div className="rounded-xl bg-ink/80 p-3 text-paper shadow">

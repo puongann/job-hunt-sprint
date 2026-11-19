@@ -142,7 +142,7 @@ function ensureDriver(roomId: string, log: (m: string) => void) {
             ? new Promise<void>((resolve) =>
                 later(rand(800, 3000), () => {
                   const team: Team = Math.random() < 0.5 ? 'A' : 'B';
-                  botChooseSide(roomId, b, team, round.id)
+                  botChooseSide(roomId, b, team, room.sideKey ?? round.id)
                     .then(() => (b.player.team = team))
                     .catch((e) => log(`${b.player.nickname} could not choose a side: ${(e as Error).message}`))
                     .finally(resolve);

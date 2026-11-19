@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { DEFAULT_TEAM_NAMES } from '../config/brand';
 import { Loading } from '../components/ui';
-import { castVote, chooseSide, heartbeat, heartbeatAndSync, saveSentence } from '../lib/api';
+import { castVote, chooseSide, currentSideKey, heartbeat, heartbeatAndSync, saveSentence } from '../lib/api';
 import {
   useAllSentences,
   useAuthUid,
@@ -63,7 +63,7 @@ export default function PlayPage() {
   const p = player.data;
   const teamNames = r.teamNames ?? DEFAULT_TEAM_NAMES;
   // Table rounds: no team until the student has read the table and chosen a side.
-  const teamPending = r.pickTeamLater === true && (r.phase === 'lobby' || p.sideRound !== r.currentRoundId);
+  const teamPending = r.pickTeamLater === true && (r.phase === 'lobby' || p.sideRound !== currentSideKey(r));
   return (
     <PhoneShell
       nickname={p.nickname}
@@ -90,22 +90,32 @@ function Writing({ room, player }: { room: Room; player: Player }) {
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [changing, setChanging] = useState(false);
   if (!round) return <Loading />;
   const end = room.timerEndsAt?.toMillis() ?? 0;
-  if (round.type === 'table' && player.sideRound !== round.id) {
+  const sideKey = currentSideKey(room);
+  const isTable = round.type === 'table';
+  const hasSide = isTable && sideKey !== null && player.sideRound === sideKey;
+  const teamNames = room.teamNames ?? DEFAULT_TEAM_NAMES;
+  if (isTable && (!hasSide || changing)) {
     return (
       <PhoneChooseSide
         round={round}
         remainingMs={end - now}
         totalMs={round.timerSeconds * 1000}
-        teamNames={room.teamNames ?? DEFAULT_TEAM_NAMES}
+        teamNames={teamNames}
+        current={hasSide ? player.team : undefined}
+        onCancel={hasSide ? () => setChanging(false) : undefined}
         busy={choosing}
         error={error}
         onChoose={async (team) => {
+          if (!sideKey) return;
+          if (hasSide && team === player.team) return setChanging(false);
           setChoosing(true);
           setError(null);
           try {
-            await chooseSide(room.code, player.id, team, round.id);
+            await chooseSide(room.code, player.id, team, sideKey, mine.data.map((x) => x.id));
+            setChanging(false);
           } catch {
             setError('Could not save your choice (time may be up).');
           } finally {
@@ -128,6 +138,8 @@ function Writing({ room, player }: { room: Room; player: Player }) {
       slots={slots}
       savingSlot={saving}
       error={error}
+      side={hasSide ? { team: player.team, name: teamNames[player.team] } : undefined}
+      onChangeSide={hasSide ? () => setChanging(true) : undefined}
       onSave={async (slot, text) => {
         setSaving(slot);
         setError(null);

@@ -132,6 +132,7 @@ export async function startRound(room: Room, roundId: string) {
     currentRoundId: roundId,
     teamNames: teamNamesFromRounds([r]), // the two teams are the two sides of this round
     pickTeamLater: r.type === 'table', // table round: students read first, then pick a side
+    sideKey: `${roundId}~${Date.now().toString(36)}`, // new key each run: sides are chosen again
     timerEndsAt: Timestamp.fromMillis(serverNow() + r.timerSeconds * 1000),
     currentSentenceId: null,
     sentenceStep: null,
@@ -296,10 +297,19 @@ export function cleanNickname(s: string): string {
   return s.replace(/\s+/g, ' ').replace(/\//g, '').trim();
 }
 
-/** Table rounds: the student picks a side (team) once, after reading the table. */
-export async function chooseSide(roomId: string, playerId: string, team: Team, roundId: string) {
+/** The side key of the round being played (changes on every start of a round). */
+export function currentSideKey(room: Pick<Room, 'sideKey' | 'currentRoundId'>): string | null {
+  return room.sideKey ?? room.currentRoundId;
+}
+
+/** Table rounds: the student picks (or changes) a side after reading the table.
+ *  Sentences already written this round move to the new side too. */
+export async function chooseSide(roomId: string, playerId: string, team: Team, sideKey: string, sentenceIds: string[] = []) {
   const { db } = fb();
-  await updateDoc(rSub(db, roomId, 'players', playerId), { team, sideRound: roundId });
+  const batch = writeBatch(db);
+  batch.update(rSub(db, roomId, 'players', playerId), { team, sideRound: sideKey });
+  sentenceIds.forEach((id) => batch.update(rSub(db, roomId, 'sentences', id), { team }));
+  await batch.commit();
 }
 
 export async function joinRoom(roomId: string, uid: string, nicknameRaw: string, team: Team): Promise<void> {

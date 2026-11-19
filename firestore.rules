@@ -111,8 +111,8 @@ service cloud.firestore {
           && request.resource.data.lastSeenAt == request.time
           && getAfter(sub(roomId, 'members', playerId)).data.playerId == playerId
           && getAfter(sub(roomId, 'nicknames', request.resource.data.nickname.lower())).data.playerId == playerId;
-        // A student may refresh their own heartbeat, and in a table round pick their side once
-        // (after reading the table). Other team / currentUid changes are host-only.
+        // A student may refresh their own heartbeat, and in a table round pick (or change) their
+        // side while writing is open. Other team / currentUid changes are host-only.
         allow update: if isHost(roomId) || (
           isActiveMember(roomId)
           && myPid(roomId) == playerId
@@ -132,8 +132,12 @@ service cloud.firestore {
           && r.rounds[r.currentRoundId].get('type', 'choice') == 'table'
           && d.diff(resource.data).affectedKeys().hasOnly(['team', 'sideRound'])
           && d.team in ['A', 'B']
-          && d.sideRound == r.currentRoundId
-          && resource.data.get('sideRound', '') != r.currentRoundId;
+          && d.sideRound == sideKey(r);
+      }
+
+      // Each start of a round gets a new key, so re-running a table round asks for the side again.
+      function sideKey(r) {
+        return r.get('sideKey', r.currentRoundId);
       }
 
       // Nickname claim: the doc id is the lowercase nickname, so create() fails if taken.
@@ -174,7 +178,7 @@ service cloud.firestore {
           && d.authorNickname == p.nickname
           && d.team == p.team
           // table round: the side must have been chosen for this round first
-          && (r.rounds[d.roundId].get('type', 'choice') != 'table' || p.get('sideRound', '') == r.currentRoundId)
+          && (r.rounds[d.roundId].get('type', 'choice') != 'table' || p.get('sideRound', '') == sideKey(r))
           && validText(d.originalText);
       }
 
@@ -184,7 +188,9 @@ service cloud.firestore {
         return writingOpen(r)
           && resource.data.authorPlayerId == myPid(roomId)
           && resource.data.roundId == r.currentRoundId
-          && d.diff(resource.data).affectedKeys().hasOnly(['originalText', 'updatedAt'])
+          && d.diff(resource.data).affectedKeys().hasOnly(['originalText', 'updatedAt', 'team'])
+          // the team always follows the author's (possibly just changed) side
+          && d.team == getAfter(sub(roomId, 'players', myPid(roomId))).data.team
           && validText(d.originalText);
       }
 

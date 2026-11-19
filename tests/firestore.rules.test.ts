@@ -278,12 +278,35 @@ describe('sentences', () => {
 describe('table rounds: pick a side after reading', () => {
   const side = (team: string, round = 't1') => ({ team, sideRound: round });
 
-  it('lets a student pick their side once, in a table round, while writing is open', async () => {
+  it('lets a student pick and change their side in a table round while writing is open', async () => {
     await setRoom({ currentRoundId: 't1' });
     const db = asUser('p2');
     await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
-    // only once per round
-    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('A')));
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('A'))); // changed their mind
+  });
+
+  it('a re-run of the round (new side key) needs a new choice, with that key', async () => {
+    await setRoom({ currentRoundId: 't1', sideKey: 't1~run1' });
+    const db = asUser('p2');
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B'))); // old-style key
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B', 't1~run1')));
+    await setRoom({ sideKey: 't1~run2' });
+    await assertFails(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'B', 't1', 1)));
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('A', 't1~run2')));
+    await assertSucceeds(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'A', 't1', 1)));
+  });
+
+  it('moving to the other side moves my sentences too, only together with the side change', async () => {
+    await setRoom({ currentRoundId: 't1' });
+    const db = asUser('p2');
+    await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
+    await assertSucceeds(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'B', 't1', 1)));
+    // the sentence alone cannot switch team
+    await assertFails(updateDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), { team: 'A' }));
+    const batch = writeBatch(db);
+    batch.update(doc(db, `rooms/${ROOM}/players/p2`), side('A'));
+    batch.update(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), { team: 'A' });
+    await assertSucceeds(batch.commit());
   });
 
   it('rejects side changes outside table rounds, after the timer, for someone else, or with other fields', async () => {

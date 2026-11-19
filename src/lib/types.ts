@@ -58,6 +58,8 @@ export interface Room {
   hideAuthor?: boolean;
   /** Table rounds: students join without a team and pick a side after reading the table. */
   pickTeamLater?: boolean;
+  /** Changes on every start of a round; a table-round side is valid only for this key. */
+  sideKey?: string;
   teamNames: { A: string; B: string };
   hostSeenAt?: Timestamp | null;
   createdAt: Timestamp | null;
