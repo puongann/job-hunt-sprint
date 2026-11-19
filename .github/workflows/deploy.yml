@@ -53,15 +53,16 @@ jobs:
         run: bash scripts/ci-firebase-config.sh
       - run: npm ci
       - run: npm run build
-      - name: Deploy Hosting + Firestore rules + indexes
+      - name: Deploy Hosting + Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
-        run: >
-          npx firebase deploy
-          --only hosting,firestore:rules,firestore:indexes
-          --project "$FIREBASE_PROJECT"
-          --non-interactive
-          --message "GitHub ${{ github.sha }}"
+        run: bash scripts/ci-deploy.sh hosting,firestore:rules
+      # Indexes + TTL policies (auto-delete rooms after 24h). Separate, so a failure here
+      # never blocks the app itself; the run still shows red so it gets noticed.
+      - name: Deploy Firestore indexes + TTL policies
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: bash scripts/ci-deploy.sh firestore:indexes
       - name: Remove the key file
         if: always()
         run: rm -f "$RUNNER_TEMP/sa.json"
