@@ -64,14 +64,21 @@ async function addBots(room: Room, n: number, log: (m: string) => void) {
   ensureDriver(room.code, log);
 }
 
+/** The room's TTL value, copied onto every bot doc (rules require it). */
+let botExpireAt: Record<string, string> | undefined;
+const noteExpiry = (room: Room) => {
+  botExpireAt = room.expireAt ? { expireAt: room.expireAt.toDate().toISOString() } : undefined;
+};
+
 async function joinBot(room: Room, nick: string, team: Team, idx: number, log: (m: string) => void) {
+  noteExpiry(room);
   const user = await createIsolatedUser(`bot-${Date.now()}-${idx}`);
   const base = `rooms/${room.code}`;
   try {
     await restCommit(await user.token(), [
-      { path: `${base}/members/${user.uid}`, fields: { playerId: user.uid, revoked: false }, mustNotExist: true },
-      { path: `${base}/players/${user.uid}`, fields: { nickname: nick, team, currentUid: user.uid }, serverTime: ['joinedAt', 'lastSeenAt'], mustNotExist: true },
-      { path: `${base}/nicknames/${nick.toLowerCase()}`, fields: { playerId: user.uid }, mustNotExist: true },
+      { path: `${base}/members/${user.uid}`, fields: { playerId: user.uid, revoked: false }, timestamps: botExpireAt, mustNotExist: true },
+      { path: `${base}/players/${user.uid}`, fields: { nickname: nick, team, currentUid: user.uid }, serverTime: ['joinedAt', 'lastSeenAt'], timestamps: botExpireAt, mustNotExist: true },
+      { path: `${base}/nicknames/${nick.toLowerCase()}`, fields: { playerId: user.uid }, timestamps: botExpireAt, mustNotExist: true },
     ]);
     bots.push({ uid: user.uid, app: user.app, token: user.token, player: { id: user.uid, nickname: nick, team, joinedAt: null, lastSeenAt: null, currentUid: user.uid } });
     emit();
@@ -87,6 +94,7 @@ async function botWriteSentence(roomId: string, b: Bot, roundId: string, slot: n
       path: `rooms/${roomId}/sentences/${sentenceId(roundId, b.uid, slot)}`,
       fields: { roundId, slot, authorPlayerId: b.uid, authorNickname: b.player.nickname, team: b.player.team, originalText: text },
       serverTime: ['createdAt', 'updatedAt'],
+      timestamps: botExpireAt,
       mustNotExist: true,
     },
   ]);
@@ -100,7 +108,7 @@ async function botChooseSide(roomId: string, b: Bot, team: Team, roundId: string
 
 async function botVote(roomId: string, b: Bot, sid: string, value: Score) {
   await restCommit(await b.token(), [
-    { path: `rooms/${roomId}/votes/${voteId(sid, b.uid)}`, fields: { sentenceId: sid, playerId: b.uid, value }, serverTime: ['updatedAt'] },
+    { path: `rooms/${roomId}/votes/${voteId(sid, b.uid)}`, fields: { sentenceId: sid, playerId: b.uid, value }, serverTime: ['updatedAt'], timestamps: botExpireAt },
   ]);
 }
 
@@ -127,6 +135,7 @@ function ensureDriver(roomId: string, log: (m: string) => void) {
   const unsub = onSnapshot(doc(fb().db, 'rooms', roomId), async (snap) => {
     const room = snap.data() as Room | undefined;
     if (!room) return;
+    noteExpiry(room);
     if (room.phase === 'writing' && room.currentRoundId) {
       const round = room.rounds[room.currentRoundId];
       const remaining = (room.timerEndsAt?.toMillis() ?? 0) - Date.now();

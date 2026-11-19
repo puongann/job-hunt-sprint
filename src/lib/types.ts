@@ -60,6 +60,8 @@ export interface Room {
   pickTeamLater?: boolean;
   /** Changes on every start of a round; a table-round side is valid only for this key. */
   sideKey?: string;
+  /** TTL: the room and everything in it is deleted after this time. */
+  expireAt?: Timestamp;
   teamNames: { A: string; B: string };
   hostSeenAt?: Timestamp | null;
   createdAt: Timestamp | null;

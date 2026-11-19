@@ -43,6 +43,11 @@ service cloud.firestore {
     function validText(t) {
       return t is string && t.size() >= 1 && t.size() <= 200;
     }
+    // TTL: every doc carries its room's expireAt, so the whole room is deleted together
+    // (a Firestore TTL policy on expireAt in each collection group does the deleting).
+    function sameExpiry(r) {
+      return request.resource.data.get('expireAt', null) == r.get('expireAt', null);
+    }
 
     // ---------- secrets: never readable by any client ----------
     match /roomSecrets/{roomId} {
@@ -51,7 +56,8 @@ service cloud.firestore {
       allow create: if signedIn()
         && !exists(roomPath(roomId))
         && getAfter(roomPath(roomId)).data.hostUid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['pin'])
+        && request.resource.data.keys().hasOnly(['pin', 'expireAt'])
+        && sameExpiry(getAfter(roomPath(roomId)).data)
         && request.resource.data.pin is string
         && request.resource.data.pin.matches('^[0-9]{6}$');
       allow update, delete: if false;
@@ -64,6 +70,10 @@ service cloud.firestore {
         && request.resource.data.code == roomId
         && request.resource.data.phase == 'lobby'
         && !('pin' in request.resource.data)
+        // deleted about a day after creation (at most two days)
+        && request.resource.data.expireAt is timestamp
+        && request.resource.data.expireAt > request.time
+        && request.resource.data.expireAt < request.time + duration.value(2, 'd')
         && existsAfter(/databases/$(database)/documents/roomSecrets/$(roomId));
       allow update: if isHost(roomId) && !('pin' in request.resource.data);
       allow delete: if false;
@@ -73,7 +83,8 @@ service cloud.firestore {
         allow read: if signedIn() && request.auth.uid == uid;
         allow create, update: if signedIn()
           && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['pin', 'claimedAt'])
+          && request.resource.data.keys().hasOnly(['pin', 'claimedAt', 'expireAt'])
+          && sameExpiry(room(roomId))
           && request.resource.data.pin is string
           && request.resource.data.pin == get(/databases/$(database)/documents/roomSecrets/$(roomId)).data.pin;
         allow delete: if false;
@@ -87,7 +98,8 @@ service cloud.firestore {
           signedIn()
           && request.auth.uid == uid
           && room(roomId).joinOpen == true
-          && request.resource.data.keys().hasOnly(['playerId', 'revoked'])
+          && request.resource.data.keys().hasOnly(['playerId', 'revoked', 'expireAt'])
+          && sameExpiry(room(roomId))
           && request.resource.data.playerId == uid
           && request.resource.data.revoked == false
           && !exists(sub(roomId, 'players', uid))
@@ -102,7 +114,8 @@ service cloud.firestore {
         allow create: if signedIn()
           && request.auth.uid == playerId
           && room(roomId).joinOpen == true
-          && request.resource.data.keys().hasOnly(['nickname', 'team', 'joinedAt', 'lastSeenAt', 'currentUid'])
+          && request.resource.data.keys().hasOnly(['nickname', 'team', 'joinedAt', 'lastSeenAt', 'currentUid', 'expireAt'])
+          && sameExpiry(room(roomId))
           && request.resource.data.nickname is string
           && request.resource.data.nickname.matches('^[^/]{2,16}$')
           && request.resource.data.team in ['A', 'B']
@@ -145,7 +158,8 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create: if signedIn()
           && room(roomId).joinOpen == true
-          && request.resource.data.keys().hasOnly(['playerId'])
+          && request.resource.data.keys().hasOnly(['playerId', 'expireAt'])
+          && sameExpiry(room(roomId))
           && request.resource.data.playerId == request.auth.uid
           && getAfter(sub(roomId, 'players', request.auth.uid)).data.nickname.lower() == nick;
         allow update: if false;
@@ -168,7 +182,8 @@ service cloud.firestore {
         return writingOpen(r)
           // score fields (teacherScore, finalScore, voteTally, studentAvg, locked, challenge,
           // correctedText) can never be written by the author: they are simply not allowed keys.
-          && d.keys().hasOnly(['roundId', 'slot', 'authorPlayerId', 'authorNickname', 'team', 'originalText', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['roundId', 'slot', 'authorPlayerId', 'authorNickname', 'team', 'originalText', 'createdAt', 'updatedAt', 'expireAt'])
+          && sameExpiry(r)
           && d.authorPlayerId == pid
           && d.roundId == r.currentRoundId
           && d.slot is int
@@ -208,7 +223,8 @@ service cloud.firestore {
         let pid = myPid(roomId);
         return r.phase == 'review'
           && r.sentenceStep == 'voting'
-          && d.keys().hasOnly(['sentenceId', 'playerId', 'value', 'updatedAt'])
+          && d.keys().hasOnly(['sentenceId', 'playerId', 'value', 'updatedAt', 'expireAt'])
+          && sameExpiry(r)
           && d.sentenceId == r.currentSentenceId
           && d.playerId == pid
           && voteId == d.sentenceId + '_' + pid
@@ -224,7 +240,8 @@ service cloud.firestore {
           && room(roomId).rejoinOpen == true
           && room(roomId).rejoinExpiresAt is timestamp
           && request.time < room(roomId).rejoinExpiresAt
-          && request.resource.data.keys().hasOnly(['playerId', 'token', 'status', 'createdAt'])
+          && request.resource.data.keys().hasOnly(['playerId', 'token', 'status', 'createdAt', 'expireAt'])
+          && sameExpiry(room(roomId))
           && request.resource.data.token == room(roomId).rejoinToken
           && request.resource.data.status == 'pending'
           && request.resource.data.playerId is string

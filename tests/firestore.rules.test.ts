@@ -125,21 +125,37 @@ beforeEach(async () => {
 describe('rooms and secrets', () => {
   it('lets a signed-in user create a room only together with its secret', async () => {
     const db = asUser('newhost');
+    const expireAt = inMinutes(24 * 60);
     const lonely = writeBatch(db);
-    lonely.set(doc(db, 'rooms', 'ABCD'), { code: 'ABCD', hostUid: 'newhost', phase: 'lobby' });
+    lonely.set(doc(db, 'rooms', 'ABCD'), { code: 'ABCD', hostUid: 'newhost', phase: 'lobby', expireAt });
     await assertFails(lonely.commit());
 
     const b = writeBatch(db);
-    b.set(doc(db, 'rooms', 'ABCD'), { code: 'ABCD', hostUid: 'newhost', phase: 'lobby' });
-    b.set(doc(db, 'roomSecrets', 'ABCD'), { pin: '654321' });
+    b.set(doc(db, 'rooms', 'ABCD'), { code: 'ABCD', hostUid: 'newhost', phase: 'lobby', expireAt });
+    b.set(doc(db, 'roomSecrets', 'ABCD'), { pin: '654321', expireAt });
     await assertSucceeds(b.commit());
+  });
+
+  it('a new room must expire within two days (TTL), and its secret with it', async () => {
+    const db = asUser('newhost');
+    const make = (roomExp: unknown, secretExp: unknown) => {
+      const b = writeBatch(db);
+      b.set(doc(db, 'rooms', 'EFGH'), { code: 'EFGH', hostUid: 'newhost', phase: 'lobby', ...(roomExp ? { expireAt: roomExp } : {}) });
+      b.set(doc(db, 'roomSecrets', 'EFGH'), { pin: '654321', ...(secretExp ? { expireAt: secretExp } : {}) });
+      return b.commit();
+    };
+    const day = inMinutes(24 * 60);
+    await assertFails(make(null, null)); // no expiry
+    await assertFails(make(inMinutes(5 * 24 * 60), inMinutes(5 * 24 * 60))); // too far away
+    await assertFails(make(day, null)); // the secret would never be deleted
+    await assertSucceeds(make(day, day));
   });
 
   it('rejects a room created for someone else, or an anonymous visitor', async () => {
     const db = asUser('newhost');
     const b = writeBatch(db);
-    b.set(doc(db, 'rooms', 'WXYZ'), { code: 'WXYZ', hostUid: 'someoneelse', phase: 'lobby' });
-    b.set(doc(db, 'roomSecrets', 'WXYZ'), { pin: '654321' });
+    b.set(doc(db, 'rooms', 'WXYZ'), { code: 'WXYZ', hostUid: 'someoneelse', phase: 'lobby', expireAt: inMinutes(60) });
+    b.set(doc(db, 'roomSecrets', 'WXYZ'), { pin: '654321', expireAt: inMinutes(60) });
     await assertFails(b.commit());
     await assertFails(getDoc(doc(anon(), 'rooms', ROOM)));
   });
@@ -328,6 +344,33 @@ describe('table rounds: pick a side after reading', () => {
     await assertSucceeds(updateDoc(doc(db, `rooms/${ROOM}/players/p2`), side('B')));
     await assertFails(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'A', 't1', 1)));
     await assertSucceeds(setDoc(doc(db, `rooms/${ROOM}/sentences/t1_p2_1`), sentence('p2', 'Long', 'B', 't1', 1)));
+  });
+});
+
+describe('TTL: every doc carries the room expiry', () => {
+  it('student docs must copy the room expireAt exactly', async () => {
+    const exp = inMinutes(24 * 60);
+    await setRoom({ joinOpen: true, expireAt: exp });
+    const join = (uid: string, nick: string, e: unknown) => {
+      const db = asUser(uid);
+      const x = e ? { expireAt: e } : {};
+      const b = writeBatch(db);
+      b.set(doc(db, `rooms/${ROOM}/members/${uid}`), { playerId: uid, revoked: false, ...x });
+      b.set(doc(db, `rooms/${ROOM}/players/${uid}`), { nickname: nick, team: 'A', joinedAt: serverTimestamp(), lastSeenAt: serverTimestamp(), currentUid: uid, ...x });
+      b.set(doc(db, `rooms/${ROOM}/nicknames/${nick.toLowerCase()}`), { playerId: uid, ...x });
+      return b.commit();
+    };
+    await assertFails(join('k1', 'Kim', null));
+    await assertFails(join('k1', 'Kim', inMinutes(99 * 60)));
+    await assertSucceeds(join('k1', 'Kim', exp));
+    const db = asUser('p2');
+    await assertFails(setDoc(doc(db, `rooms/${ROOM}/sentences/r1_p2_1`), sentence('p2', 'Long', 'A', 'r1', 1)));
+    await assertSucceeds(setDoc(doc(db, `rooms/${ROOM}/sentences/r1_p2_1`), { ...sentence('p2', 'Long', 'A', 'r1', 1), expireAt: exp }));
+    await setRoom(votingOn);
+    await assertFails(setDoc(doc(db, `rooms/${ROOM}/votes/r1_p1_1_p2`), { sentenceId: 'r1_p1_1', playerId: 'p2', value: 2 }));
+    await assertSucceeds(
+      setDoc(doc(db, `rooms/${ROOM}/votes/r1_p1_1_p2`), { sentenceId: 'r1_p1_1', playerId: 'p2', value: 2, expireAt: exp }),
+    );
   });
 });
 

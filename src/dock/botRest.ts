@@ -18,6 +18,7 @@ export interface RestWrite {
   serverTime?: string[]; // fields set to the server's request time
   mustNotExist?: boolean;
   mask?: string[]; // partial update (only these fields)
+  timestamps?: Record<string, string>; // timestamp fields (ISO strings)
 }
 
 export async function restCommit(token: string, writes: RestWrite[]): Promise<void> {
@@ -25,7 +26,11 @@ export async function restCommit(token: string, writes: RestWrite[]): Promise<vo
   const docRoot = base.replace(/^.*?\/v1\//, '');
   const body = {
     writes: writes.map((w) => ({
-      update: { name: `${docRoot}/${w.path}`, fields: Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, enc(v)])) },
+      update: { name: `${docRoot}/${w.path}`, fields: {
+          ...Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, enc(v)])),
+          ...Object.fromEntries(Object.entries(w.timestamps ?? {}).map(([k, v]) => [k, { timestampValue: v }])),
+        },
+      },
       ...(w.mask ? { updateMask: { fieldPaths: w.mask } } : {}),
       ...(w.serverTime?.length ? { updateTransforms: w.serverTime.map((f) => ({ fieldPath: f, setToServerValue: 'REQUEST_TIME' })) } : {}),
       ...(w.mustNotExist ? { currentDocument: { exists: false } } : {}),

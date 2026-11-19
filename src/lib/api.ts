@@ -22,6 +22,19 @@ import { finalScore, studentAverage, tallyVotes } from './scoring';
 import type { Player, RejoinRequest, Room, RoundConfig, Score, Sentence, Team } from './types';
 
 const rRoom = (db: Firestore, roomId: string) => doc(db, 'rooms', roomId);
+
+/** Rooms (and everything in them) are deleted automatically by a Firestore TTL policy
+ *  on `expireAt`, about 24 hours after the room was created. Every doc copies the room's value. */
+export const ROOM_LIFETIME_MS = 24 * 60 * 60 * 1000;
+const expiryCache = new Map<string, Timestamp | null>();
+async function expiry(db: Firestore, roomId: string): Promise<{ expireAt?: Timestamp }> {
+  if (!expiryCache.has(roomId)) {
+    const snap = await getDoc(rRoom(db, roomId));
+    expiryCache.set(roomId, (snap.get('expireAt') as Timestamp | undefined) ?? null);
+  }
+  const t = expiryCache.get(roomId);
+  return t ? { expireAt: t } : {};
+}
 const rSub = (db: Firestore, roomId: string, coll: string, id: string) => doc(db, 'rooms', roomId, coll, id);
 
 export function isPermissionError(e: unknown): boolean {
@@ -37,6 +50,7 @@ export async function createRoom(uid: string, rounds: RoundConfig[]): Promise<{ 
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = randomRoomCode();
     const pin = randomPin();
+    const expireAt = Timestamp.fromMillis(Date.now() + ROOM_LIFETIME_MS);
     const room: Omit<Room, 'createdAt' | 'timerEndsAt' | 'rejoinExpiresAt'> & Record<string, unknown> = {
       code,
       hostUid: uid,
@@ -61,10 +75,11 @@ export async function createRoom(uid: string, rounds: RoundConfig[]): Promise<{ 
       pickTeamLater: rounds[0]?.type === 'table',
       teamNames: teamNamesFromRounds(rounds),
       createdAt: serverTimestamp(),
+      expireAt,
     };
     const b = writeBatch(db);
     b.set(rRoom(db, code), room);
-    b.set(doc(db, 'roomSecrets', code), { pin });
+    b.set(doc(db, 'roomSecrets', code), { pin, expireAt });
     try {
       await b.commit();
       rememberHostedRoom(code);
@@ -82,7 +97,7 @@ export async function claimHost(roomId: string, uid: string, pin: string): Promi
   const snap = await getDoc(rRoom(db, roomId));
   if (!snap.exists()) throw new Error('No room with that code.');
   try {
-    await setDoc(rSub(db, roomId, 'hostClaims', uid), { pin, claimedAt: serverTimestamp() });
+    await setDoc(rSub(db, roomId, 'hostClaims', uid), { pin, claimedAt: serverTimestamp(), ...(await expiry(db, roomId)) });
   } catch (e) {
     if (isPermissionError(e)) throw new Error('That PIN does not match this room.');
     throw e;
@@ -275,7 +290,7 @@ export async function closeRejoin(roomId: string) {
 export async function approveRejoin(roomId: string, req: RejoinRequest, player: Player) {
   const { db } = fb();
   const b = writeBatch(db);
-  b.set(rSub(db, roomId, 'members', req.id), { playerId: req.playerId, revoked: false });
+  b.set(rSub(db, roomId, 'members', req.id), { playerId: req.playerId, revoked: false, ...(await expiry(db, roomId)) });
   if (player.currentUid && player.currentUid !== req.id) {
     b.set(rSub(db, roomId, 'members', player.currentUid), { revoked: true }, { merge: true });
   }
@@ -321,16 +336,18 @@ export async function joinRoom(roomId: string, uid: string, nicknameRaw: string,
   if (room.get('joinOpen') !== true) throw Object.assign(new Error('closed'), { kind: 'closed' as JoinError });
   const nickRef = rSub(db, roomId, 'nicknames', nickname.toLowerCase());
   if ((await getDoc(nickRef)).exists()) throw Object.assign(new Error('taken'), { kind: 'taken' as JoinError });
+  const exp = room.get('expireAt') ? { expireAt: room.get('expireAt') as Timestamp } : {};
   const b = writeBatch(db);
-  b.set(rSub(db, roomId, 'members', uid), { playerId: uid, revoked: false });
+  b.set(rSub(db, roomId, 'members', uid), { playerId: uid, revoked: false, ...exp });
   b.set(rSub(db, roomId, 'players', uid), {
     nickname,
     team,
     joinedAt: serverTimestamp(),
     lastSeenAt: serverTimestamp(),
     currentUid: uid,
+    ...exp,
   });
-  b.set(nickRef, { playerId: uid });
+  b.set(nickRef, { playerId: uid, ...exp });
   try {
     await b.commit();
   } catch (e) {
@@ -379,6 +396,7 @@ export async function saveSentence(
       originalText: text,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      ...(await expiry(db, roomId)),
     });
   }
 }
@@ -390,6 +408,7 @@ export async function castVote(roomId: string, sentenceId: string, playerId: str
     playerId,
     value,
     updatedAt: serverTimestamp(),
+    ...(await expiry(db, roomId)),
   });
 }
 
@@ -402,7 +421,7 @@ export async function requestRejoin(roomId: string, uid: string, playerId: strin
   } catch {
     /* no previous request */
   }
-  await setDoc(ref, { playerId, token, status: 'pending', createdAt: serverTimestamp() });
+  await setDoc(ref, { playerId, token, status: 'pending', createdAt: serverTimestamp(), ...(await expiry(db, roomId)) });
 }
 
 export async function cancelRejoin(roomId: string, uid: string) {

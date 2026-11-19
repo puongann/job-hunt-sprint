@@ -186,3 +186,4 @@ Key ideas:
 - **Ẩn tên tác giả:** mặc định tên người viết hiện ngay. Muốn giấu đến lúc công bố: **⚙ Settings** → tick **Hide the author**.
 - **Sửa nội dung vòng chơi:** nút **⚙ Settings** (hoặc **Settings (rounds)** trước khi tạo phòng). Có **Export / Import JSON** để mang sang máy khác.
 - Âm thanh: bấm **Enable sound** một lần; nút 🔊/🔇 để tắt tiếng.
+- **Phòng tự xoá sau 24 giờ:** mỗi phòng (và toàn bộ tên, câu viết, phiếu bầu trong đó) tự bị xoá khoảng 24 giờ sau khi tạo. Firestore có thể xoá trễ thêm tới khoảng 1 ngày. Mỗi buổi học hãy tạo phòng mới.
